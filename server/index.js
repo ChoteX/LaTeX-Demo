@@ -10,9 +10,24 @@ const app = express();
 const port = process.env.PORT || 4000;
 const modelName = process.env.GEMINI_MODEL || 'gemini-2.5-pro';
 const maxExercises = Number(process.env.MAX_EXERCISES || 30);
+const normalizeOrigin = (value) => {
+  if (!value) return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+
+  if (trimmed === '*') return '*';
+
+  try {
+    const parsed = new URL(trimmed);
+    return parsed.origin;
+  } catch {
+    return trimmed.replace(/\/+$/, '');
+  }
+};
+
 const allowedOrigins = (process.env.ALLOWED_ORIGINS || '')
   .split(',')
-  .map((origin) => origin.trim())
+  .map(normalizeOrigin)
   .filter(Boolean);
 
 if (!process.env.API_KEY) {
@@ -22,7 +37,7 @@ if (!process.env.API_KEY) {
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.length === 0) {
+      if (!origin || allowedOrigins.length === 0 || allowedOrigins.includes('*')) {
         return callback(null, true);
       }
 

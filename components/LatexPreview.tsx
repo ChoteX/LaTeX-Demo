@@ -12,20 +12,42 @@ interface LatexPreviewProps {
   height?: number;
 }
 
+const BODY_TRIGGER_REGEX = /\\(section|subsection|chapter|part|paragraph|subparagraph|begin|maketitle|title|author|date|frame|textbf|textit|item)/;
+
+const sanitizeLatex = (latex: string) => latex.replace(/^\uFEFF/, '').trimStart();
+
+const findBodyInsertionIndex = (latex: string) => {
+  const match = BODY_TRIGGER_REGEX.exec(latex);
+  if (!match || typeof match.index !== 'number') {
+    return latex.length;
+  }
+  return match.index;
+};
+
 const ensureDocumentWrapper = (latex: string) => {
-  if (!latex?.trim()) return '';
+  const cleaned = sanitizeLatex(latex);
+  if (!cleaned) return '';
 
-  const hasDocumentEnv =
-    latex.includes('\\begin{document}') && latex.includes('\\end{document}');
+  let result = cleaned;
+  const hasDocClass = /\\documentclass/.test(result);
 
-  if (hasDocumentEnv) {
-    return latex;
+  if (!/\\begin{document}/.test(result)) {
+    const insertionIndex = findBodyInsertionIndex(result);
+    const before = result.slice(0, insertionIndex);
+    const after = result.slice(insertionIndex);
+    const beginBlock = `${before && !before.endsWith('\n') ? '\n' : ''}\\begin{document}\n`;
+    result = `${before}${beginBlock}${after}`;
   }
 
-  return `\\documentclass{article}
-\\begin{document}
-${latex}
-\\end{document}`;
+  if (!/\\end{document}/.test(result)) {
+    result = `${result}\n\\end{document}`;
+  }
+
+  if (!hasDocClass) {
+    result = `\\documentclass{article}\n${result}`;
+  }
+
+  return result;
 };
 
 const LatexPreview: React.FC<LatexPreviewProps> = ({

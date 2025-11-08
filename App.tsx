@@ -27,6 +27,8 @@ const DEFAULT_LATEX_SAMPLE = String.raw`
 % --- One-line multiple-choice list environment ---
 \newlist{choices}{enumerate*}{1}
 \setlist[choices]{label=ა), itemjoin=\hspace{1.5em}, itemsep=0pt, parsep=0pt, topsep=0pt}
+\begin{document}
+
 \section*{საკონტროლო ტესტი N 2 (ა)}
 
 \begin{enumerate}
@@ -76,8 +78,10 @@ const DEFAULT_LATEX_SAMPLE = String.raw`
 \item იპოვეთ $a$-ს შებრუნებული რიცხვი, თუ $a=3\cdot (1\frac{1}{3} - \frac{1}{2})$\\
     ა) $\frac{5}{2}$ \quad ბ) $\frac{2}{5}$ \quad გ) $-\frac{5}{2}$ \quad დ) $-\frac{2}{5}$
 
-    \item იპოვეთ $b$-ს მოპირდაპირე რიცხვი, თუ $b=5\cdot (1\frac{1}{3} - \frac{1}{2})$\\
+\item იპოვეთ $b$-ს მოპირდაპირე რიცხვი, თუ $b=5\cdot (1\frac{1}{3} - \frac{1}{2})$\\
     ა) $\frac{5}{6}$ \quad ბ) $-\frac{5}{6}$ \quad გ) $\frac{6}{5}$ \quad დ) $-\frac{6}{5}$
+
+\end{document}
 
     \item გამოთვალეთ $\frac{a+1}{a-1}$, თუ $a=\frac{2}{3}$\\
     ა) $-3$ \quad ბ) $3$ \quad გ) $5$ \quad დ) $-5$
