@@ -7,7 +7,7 @@ import Loader from './components/Loader';
 import LatexOutput from './components/LatexOutput';
 import LatexPreview from './components/LatexPreview';
 
-const DEFAULT_LATEX_SAMPLE = `
+const DEFAULT_LATEX_SAMPLE = String.raw`
 \documentclass[12pt,a4paper]{article}
 \usepackage{fontspec}
 \setmainfont{DejaVu Sans}
@@ -63,7 +63,7 @@ const DEFAULT_LATEX_SAMPLE = `
 \item $\dfrac{\dfrac{1}{5}-\dfrac{4}{5}}{4-1} =$
 
 \begin{choices}
-  \item $\dfrac{4}{5}$ \item $1$ \item $\dfrac{5}{4}$ \item $\dfrac{1}{20}$
+\item $\dfrac{4}{5}$ \item $1$ \item $\dfrac{5}{4}$ \item $\dfrac{1}{20}$
 \end{choices}
 \end{enumerate}
 
@@ -73,7 +73,7 @@ const DEFAULT_LATEX_SAMPLE = `
     \item რამდენი მთელი რიცხვია $-3\frac{1}{10}$-სა და $2\frac{5}{7}$-ს შორის?\\
     ა) 6 \quad ბ) 5 \quad გ) 4 \quad დ) 8
 
-    \item იპოვეთ $a$-ს შებრუნებული რიცხვი, თუ $a=3\cdot (1\frac{1}{3} - \frac{1}{2})$\\
+\item იპოვეთ $a$-ს შებრუნებული რიცხვი, თუ $a=3\cdot (1\frac{1}{3} - \frac{1}{2})$\\
     ა) $\frac{5}{2}$ \quad ბ) $\frac{2}{5}$ \quad გ) $-\frac{5}{2}$ \quad დ) $-\frac{2}{5}$
 
     \item იპოვეთ $b$-ს მოპირდაპირე რიცხვი, თუ $b=5\cdot (1\frac{1}{3} - \frac{1}{2})$\\
