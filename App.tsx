@@ -178,7 +178,7 @@ const App: React.FC = () => {
           )}
         </main>
         <footer className="text-center mt-8 text-gray-500 text-sm">
-          <p>Powered by Gemini API. Ensure your input is valid LaTeX for best results.</p>
+          <p>© {new Date().getFullYear()} ExpoV. All rights reserved.</p>
         </footer>
       </div>
     </div>
