@@ -1,3 +1,5 @@
+import { ensureLatexDocument } from "../utils/latex";
+
 const DEFAULT_TIMEOUT_MS = Number(import.meta.env.VITE_REQUEST_TIMEOUT_MS ?? 120000);
 const RAW_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
 const API_BASE_URL = RAW_BASE_URL.replace(/\/+$/, "");
@@ -17,6 +19,8 @@ export async function generateTestSamples(
     throw new Error("Input LaTeX script cannot be empty.");
   }
 
+  const normalizedInput = ensureLatexDocument(existingTestLatex);
+
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), DEFAULT_TIMEOUT_MS);
 
@@ -27,7 +31,7 @@ export async function generateTestSamples(
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        existingTestLatex,
+        existingTestLatex: normalizedInput,
         numExercises,
         difficulty,
         language,
@@ -50,7 +54,7 @@ export async function generateTestSamples(
       throw new Error("Malformed response from the server.");
     }
 
-    return payload.latex.trim();
+    return ensureLatexDocument(payload.latex.trim());
   } catch (error) {
     if (error instanceof DOMException && error.name === "AbortError") {
       throw new Error("The request timed out. Please try again.");

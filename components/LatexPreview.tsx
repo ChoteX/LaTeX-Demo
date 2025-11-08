@@ -1,6 +1,7 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { HtmlGenerator, parse } from 'latex.js';
 import Loader from './Loader';
+import { ensureLatexDocument } from '../utils/latex';
 import 'katex/dist/katex.min.css';
 import '../styles/latex-preview.css';
 
@@ -12,44 +13,6 @@ interface LatexPreviewProps {
   height?: number;
 }
 
-const BODY_TRIGGER_REGEX = /\\(section|subsection|chapter|part|paragraph|subparagraph|begin|maketitle|title|author|date|frame|textbf|textit|item)/;
-
-const sanitizeLatex = (latex: string) => latex.replace(/^\uFEFF/, '').trimStart();
-
-const findBodyInsertionIndex = (latex: string) => {
-  const match = BODY_TRIGGER_REGEX.exec(latex);
-  if (!match || typeof match.index !== 'number') {
-    return latex.length;
-  }
-  return match.index;
-};
-
-const ensureDocumentWrapper = (latex: string) => {
-  const cleaned = sanitizeLatex(latex);
-  if (!cleaned) return '';
-
-  let result = cleaned;
-  const hasDocClass = /\\documentclass/.test(result);
-
-  if (!/\\begin{document}/.test(result)) {
-    const insertionIndex = findBodyInsertionIndex(result);
-    const before = result.slice(0, insertionIndex);
-    const after = result.slice(insertionIndex);
-    const beginBlock = `${before && !before.endsWith('\n') ? '\n' : ''}\\begin{document}\n`;
-    result = `${before}${beginBlock}${after}`;
-  }
-
-  if (!/\\end{document}/.test(result)) {
-    result = `${result}\n\\end{document}`;
-  }
-
-  if (!hasDocClass) {
-    result = `\\documentclass{article}\n${result}`;
-  }
-
-  return result;
-};
-
 const LatexPreview: React.FC<LatexPreviewProps> = ({
   latex,
   title,
@@ -57,20 +20,20 @@ const LatexPreview: React.FC<LatexPreviewProps> = ({
   isLoading = false,
   height = 384,
 }) => {
-  const containerRef = useRef<HTMLDivElement | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [renderedHtml, setRenderedHtml] = useState<string>('');
 
   const canRender = typeof document !== 'undefined';
 
-  const normalizedInput = useMemo(() => ensureDocumentWrapper(latex), [latex]);
+  const normalizedInput = useMemo(() => ensureLatexDocument(latex), [latex]);
 
   useEffect(() => {
-    const mountNode = containerRef.current;
-    if (!mountNode) return;
+    if (!canRender) {
+      return;
+    }
 
-    mountNode.textContent = '';
-
-    if (!normalizedInput.trim() || !canRender) {
+    if (!normalizedInput.trim()) {
+      setRenderedHtml('');
       setError(null);
       return;
     }
@@ -83,16 +46,15 @@ const LatexPreview: React.FC<LatexPreviewProps> = ({
       parse(normalizedInput, { generator });
 
       const fragment = generator.domFragment();
-      const previewRoot = document.createElement('div');
-      previewRoot.className = 'latex-preview-stage-inner';
-      previewRoot.appendChild(fragment);
-
-      mountNode.appendChild(previewRoot);
+      const wrapper = document.createElement('div');
+      wrapper.appendChild(fragment);
+      setRenderedHtml(wrapper.innerHTML);
       setError(null);
     } catch (err) {
       console.error('Failed to render LaTeX preview', err);
       const message =
         err instanceof Error ? err.message : 'Unable to render LaTeX preview.';
+      setRenderedHtml('');
       setError(message);
     }
   }, [normalizedInput, canRender]);
@@ -134,10 +96,10 @@ const LatexPreview: React.FC<LatexPreviewProps> = ({
           </div>
         )}
 
-        {!isLoading && !showPlaceholder && !error && (
+        {!isLoading && !showPlaceholder && !error && renderedHtml && (
           <div
-            ref={containerRef}
-            className="latex-preview-stage-content px-6 py-5"
+            className="latex-preview-stage-content px-6 py-5 latex-preview-stage-inner"
+            dangerouslySetInnerHTML={{ __html: renderedHtml }}
           />
         )}
       </div>
