@@ -1,0 +1,5 @@
+{
+  "name": "Math Test Generator",
+  "description": "An application that takes a LaTeX script of an existing math test and generates a new LaTeX script with a configurable number of similar test samples in various languages and difficulties.",
+  "requestFramePermissions": []
+}
