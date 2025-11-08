@@ -26,6 +26,7 @@ Single-page React app (Vite) that talks to a lightweight Express proxy hosted se
    - `cp .env.example .env` and set `VITE_API_BASE_URL=http://localhost:4000` (or your Render URL).
    - From the repo root run `npm install` once, then `npm run dev` to start Vite on `http://localhost:3000`.
    - The frontend now proxies every request through the local Express server, so the browser never sees the Gemini API key.
+   - Both the raw LaTeX text and a rendered preview (powered by `latex.js` + KaTeX) update live as you type.
 
 ## Deployment
 

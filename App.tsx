@@ -2,9 +2,10 @@
 import React, { useState, useCallback } from 'react';
 import { generateTestSamples } from './services/geminiService';
 import LatexInput from './components/LatexInput';
-import LatexOutput from './components/LatexOutput';
 import Button from './components/Button';
 import Loader from './components/Loader';
+import LatexOutput from './components/LatexOutput';
+import LatexPreview from './components/LatexPreview';
 
 const DEFAULT_LATEX_SAMPLE = `\\documentclass[12pt]{article}
 \\usepackage[utf8]{inputenc}
@@ -76,6 +77,15 @@ const App: React.FC = () => {
             onChange={setInputText}
             placeholder={DEFAULT_LATEX_SAMPLE}
           />
+
+          <div className="mt-6">
+            <LatexPreview
+              latex={inputText}
+              title="Input Preview"
+              emptyMessage="Paste or type LaTeX above to see a live rendering."
+              height={420}
+            />
+          </div>
           
           <div className="mt-8 p-6 bg-gray-900/50 rounded-lg border border-gray-700">
             <h3 className="text-xl font-semibold text-gray-200 mb-6 text-center">Generation Options</h3>
@@ -162,19 +172,27 @@ const App: React.FC = () => {
           )}
 
           {(outputText || isLoading) && (
-             <div className="mt-8">
-                {isLoading && !outputText ? (
-                    <div className="w-full h-96 p-4 bg-gray-900 border border-gray-700 rounded-lg flex items-center justify-center">
-                        <div className="text-center">
-                            <Loader />
-                            <p className="mt-4 text-gray-400">Generating your new LaTeX script...</p>
-                            <p className="text-sm text-gray-500">This might take a moment.</p>
-                        </div>
-                    </div>
-                ) : (
-                    <LatexOutput latexScript={outputText} />
-                )}
-             </div>
+            <div className="mt-8 space-y-6">
+              {isLoading && !outputText ? (
+                <div className="w-full h-96 p-4 bg-gray-900 border border-gray-700 rounded-lg flex items-center justify-center">
+                  <div className="text-center">
+                    <Loader />
+                    <p className="mt-4 text-gray-400">Generating your new LaTeX script...</p>
+                    <p className="text-sm text-gray-500">This might take a moment.</p>
+                  </div>
+                </div>
+              ) : (
+                <LatexOutput latexScript={outputText} />
+              )}
+
+              <LatexPreview
+                latex={outputText}
+                title="Generated Preview"
+                emptyMessage="Run the generator to see a rendered preview."
+                isLoading={isLoading && !outputText}
+                height={480}
+              />
+            </div>
           )}
         </main>
         <footer className="text-center mt-8 text-gray-500 text-sm">
