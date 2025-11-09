@@ -63,6 +63,23 @@
   margin-right: 0.35rem;
 }
 
+/* Align list numbers and text on one line */
+.latex-preview-stage-inner ol.list > li,
+.latex-preview-stage-inner ul.list > li {
+  display: flex;
+  gap: 0.5rem;
+  align-items: baseline;
+}
+.latex-preview-stage-inner ol.list > li > p,
+.latex-preview-stage-inner ul.list > li > p {
+  margin: 0;
+  display: inline;
+}
+.latex-preview-stage-inner ol.list > li > .itemlabel,
+.latex-preview-stage-inner ul.list > li > .itemlabel {
+  min-width: 2ch;
+}
+
 .latex-preview-stage-inner .katex {
   font-size: 1.05rem;
 }
