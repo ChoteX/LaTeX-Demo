@@ -1,5 +1,5 @@
 const BODY_TRIGGER_REGEX =
-  /\\(section|subsection|chapter|part|paragraph|subparagraph|begin|maketitle|title|author|date|item|frame|textbf|textit|documentclass)\b/;
+  /\\(section|subsection|chapter|part|paragraph|subparagraph|begin|maketitle|title|author|date|item|frame|textbf|textit)\b/;
 
 const stripBomAndTrimStart = (latex: string) =>
   latex.replace(/^\ufeff/, '').replace(/\r/g, '').trimStart();
@@ -50,27 +50,18 @@ export const ensureLatexDocument = (input: string): string => {
 export const prepareForPreview = (input: string): string => {
   let result = ensureLatexDocument(input);
 
-  // Strip known unsupported packages/macros for browser preview
-  const PKG_BLOCK = /\\usepackage(\[[^\]]*\])?\{([^}]+)\}/g;
-  result = result.replace(PKG_BLOCK, (full, _opts, names) => {
-    const unsupported = new Set([
-      'fontspec',
-      'tikz',
-      'polyglossia',
-      // inputenc/fontenc are not needed for preview
-      'inputenc',
-      'fontenc',
-      // graphics/xcolor rarely needed for simple preview
-      'pgf',
-      'pgffor',
-      'pgfplots',
-    ]);
-    const filtered = names
-      .split(',')
-      .map((n: string) => n.trim())
-      .filter((n: string) => n && !unsupported.has(n));
-    return filtered.length ? `\\usepackage{${filtered.join(',')}}` : '';
-  });
+  // Strip ALL usepackage lines for preview to avoid loader errors in browser
+  // (latex.js + KaTeX can render basic math without them)
+  const PKG_BLOCK = /\n?\\usepackage(\[[^\]]*\])?\{[^}]+\}.*$/gmi;
+  result = result.replace(PKG_BLOCK, '');
+
+  // Drop enumitem customizations (we will map choices -> enumerate)
+  result = result.replace(/^\\newlist\{choices\}[\s\S]*?$/gmi, '');
+  result = result.replace(/^\\setlist\[[^\]]*\]\{[^}]*\}.*$/gmi, '');
+
+  // Map \begin{choices} ... to regular enumerate for preview
+  result = result.replace(/\\begin\{choices\}/g, '\\begin{enumerate}');
+  result = result.replace(/\\end\{choices\}/g, '\\end{enumerate}');
 
   // Remove fontspec and related font commands
   result = result.replace(/^\\setmainfont\{[^}]+\}.*$/gmi, '');
