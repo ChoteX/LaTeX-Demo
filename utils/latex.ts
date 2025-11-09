@@ -41,3 +41,44 @@ export const ensureLatexDocument = (input: string): string => {
 
   return result;
 };
+
+/**
+ * Prepares LaTeX for in-browser preview by removing packages and macros
+ * that latex.js can't handle (e.g. fontspec, tikz), while preserving
+ * structure and math content.
+ */
+export const prepareForPreview = (input: string): string => {
+  let result = ensureLatexDocument(input);
+
+  // Strip known unsupported packages/macros for browser preview
+  const PKG_BLOCK = /\\usepackage(\[[^\]]*\])?\{([^}]+)\}/g;
+  result = result.replace(PKG_BLOCK, (full, _opts, names) => {
+    const unsupported = new Set([
+      'fontspec',
+      'tikz',
+      'polyglossia',
+      // inputenc/fontenc are not needed for preview
+      'inputenc',
+      'fontenc',
+      // graphics/xcolor rarely needed for simple preview
+      'pgf',
+      'pgffor',
+      'pgfplots',
+    ]);
+    const filtered = names
+      .split(',')
+      .map((n: string) => n.trim())
+      .filter((n: string) => n && !unsupported.has(n));
+    return filtered.length ? `\\usepackage{${filtered.join(',')}}` : '';
+  });
+
+  // Remove fontspec and related font commands
+  result = result.replace(/^\\setmainfont\{[^}]+\}.*$/gmi, '');
+  result = result.replace(/^\\setsansfont\{[^}]+\}.*$/gmi, '');
+  result = result.replace(/^\\setmonofont\{[^}]+\}.*$/gmi, '');
+
+  // Remove AtBeginDocument hooks which sometimes rely on unsupported macros
+  result = result.replace(/^\\AtBeginDocument\{[\s\S]*?\}\s*/gmi, '');
+
+  return result;
+};

@@ -34,6 +34,28 @@ if (!process.env.API_KEY) {
   console.warn('Warning: API_KEY is not set. Gemini requests will fail until you add it.');
 }
 
+function ensureLatexDocument(input) {
+  if (typeof input !== 'string') return '';
+  let result = input.replace(/^\ufeff/, '').replace(/\r/g, '');
+  const hasDocClass = /\\documentclass/.test(result);
+  const hasBegin = /\\begin\{document\}/.test(result);
+  const hasEnd = /\\end\{document\}/.test(result);
+
+  if (!hasBegin) {
+    result = result.replace(/^(.*?)(?=\\section|\\maketitle|\\begin|\\title|\\author|\\date|$)/s, (m) => `${m}\\begin{document}\n`);
+    if (!/\\begin\{document\}/.test(result)) {
+      result = `\\begin{document}\n${result}`;
+    }
+  }
+  if (!hasEnd) {
+    result = `${result}\n\\end{document}`;
+  }
+  if (!hasDocClass) {
+    result = `\\documentclass{article}\n${result}`;
+  }
+  return result;
+}
+
 app.use(
   cors({
     origin: (origin, callback) => {
@@ -124,7 +146,8 @@ app.post('/api/generate', async (req, res) => {
       latexOutput = latexOutput.substring(0, latexOutput.length - 3);
     }
 
-    res.json({ latex: latexOutput.trim() });
+    const safeLatex = ensureLatexDocument(latexOutput.trim());
+    res.json({ latex: safeLatex });
   } catch (error) {
     console.error('Error generating test samples:', error);
     const message = error instanceof Error ? error.message : 'Unexpected error';

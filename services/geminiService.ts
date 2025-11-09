@@ -19,8 +19,6 @@ export async function generateTestSamples(
     throw new Error("Input LaTeX script cannot be empty.");
   }
 
-  const normalizedInput = ensureLatexDocument(existingTestLatex);
-
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), DEFAULT_TIMEOUT_MS);
 
@@ -31,7 +29,7 @@ export async function generateTestSamples(
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        existingTestLatex: normalizedInput,
+        existingTestLatex,
         numExercises,
         difficulty,
         language,

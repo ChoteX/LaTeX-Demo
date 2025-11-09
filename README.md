@@ -73,6 +73,27 @@ GitHub Action `.github/workflows/deploy.yml` already builds and publishes `dist/
 | Frontend `.env` / GitHub var| `VITE_API_BASE_URL` | Base URL of the Render service; safe to share publicly. |
 | Frontend `.env` (optional)  | `VITE_REQUEST_TIMEOUT_MS` | Override request timeout (default `120000`). |
 
+## LaTeX Output Guidelines
+
+To keep documents consistent and preview-friendly, the generator follows these rules:
+
+- Structure
+  - Start with `\documentclass[...]{article}` (or the same class as input if relevant)
+  - Open with `\begin{document}` and close with `\end{document}`
+  - Mirror the input’s structure (e.g., `\maketitle`, `\section`, `\begin{enumerate}`/`\item`)
+- Preamble
+  - Include only required packages (common: `amsmath`, `amssymb`, `enumitem`, `geometry`, `multicol`)
+  - Avoid heavy packages that the in-browser preview can’t handle (e.g., `fontspec`, `tikz`, `pgf*`, `polyglossia`)
+  - If you need custom environments (like `choices`), define them in the preamble
+- Content
+  - Generate exactly the requested number of new problems, in the requested language and difficulty
+  - Output only LaTeX (no Markdown code fences, comments, or explanations)
+
+Notes:
+- The frontend preview strips unsupported packages automatically for display only.
+- The backend post-processes model output to ensure the required `\documentclass` / `\begin{document}` / `\end{document}` are present before returning it to the browser. It does not alter the prompt sent to the model.
+- Your original input text is not modified in-place; normalization happens in transient copies for preview/post-processing.
+
 ## Useful commands
 
 ```bash

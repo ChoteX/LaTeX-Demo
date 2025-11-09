@@ -9,24 +9,15 @@ import LatexPreview from './components/LatexPreview';
 
 const DEFAULT_LATEX_SAMPLE = String.raw`
 \documentclass[12pt,a4paper]{article}
-\usepackage{fontspec}
-\setmainfont{DejaVu Sans}
+\usepackage[utf8]{inputenc}
 \usepackage[margin=2cm]{geometry}
-\usepackage{amsmath}
-\usepackage{amssymb}
+\usepackage{amsmath,amssymb}
 \usepackage{multicol}
-\usepackage[inline]{enumitem} % inline lists enabled
-\usepackage{tikz}
+\usepackage[inline]{enumitem}
 
-% --- Make all math the same size as normal text (12pt) ---
-\AtBeginDocument{%
-  \DeclareMathSizes{12}{12}{12}{12}%
-}
-\everydisplay{\textstyle}
-
-% --- One-line multiple-choice list environment ---
+% One-line multiple-choice list environment
 \newlist{choices}{enumerate*}{1}
-\setlist[choices]{label=ა), itemjoin=\hspace{1.5em}, itemsep=0pt, parsep=0pt, topsep=0pt}
+\setlist[choices]{label=ა), itemjoin=\hspace{1.5em}, itemsep=0pt, topsep=0pt}
 \begin{document}
 
 \section*{საკონტროლო ტესტი N 2 (ა)}
