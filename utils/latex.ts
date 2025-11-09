@@ -74,6 +74,25 @@ export const prepareForPreview = (input: string): string => {
     });
   }
 
+  // Render choices inline with Georgian letters (preview-only)
+  {
+    const GEO = [
+      'ა','ბ','გ','დ','ე','ვ','ზ','თ','ი','კ','ლ','მ','ნ','ო','პ','ჟ','რ','ს','ტ','უ','ფ','ქ','ღ','ყ','შ','ჩ','ც','ძ','წ','ჭ','ხ','ჯ','ჰ'
+    ];
+    result = result.replace(/\\begin\{choices\}([\\s\\S]*?)\\end\{choices\}/gmi, (_m, body) => {
+      const items = body
+        .split(/\\item\s*/g)
+        .slice(1)
+        .map((s: string) => s.trim())
+        .filter(Boolean);
+      if (!items.length) return '';
+      const line = items
+        .map((content: string, i: number) => `${GEO[i] || String.fromCharCode(97 + i)}) ${content}`)
+        .join(' \\quad ');
+      return `\\noindent ${line}`;
+    });
+  }
+
   // Drop enumitem customizations (we will map choices -> enumerate)
   result = result.replace(/^\\newlist\{choices\}[\s\S]*?$/gmi, '');
   result = result.replace(/^\\setlist\[[^\]]*\]\{[^}]*\}.*$/gmi, '');

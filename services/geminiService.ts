@@ -59,7 +59,14 @@ export async function generateTestSamples(
     }
 
     if (error instanceof Error) {
-      throw new Error(error.message || "Failed to contact the generation server.");
+      const msg = error.message || "Failed to contact the generation server.";
+      // Surface friendlier hint for network transport failures
+      if (/load failed|failed to fetch/i.test(msg)) {
+        throw new Error(
+          "Load failed: please verify your network and VITE_API_BASE_URL points to your Render backend (HTTPS)."
+        );
+      }
+      throw new Error(msg);
     }
 
     throw new Error("An unknown error occurred while contacting the server.");
