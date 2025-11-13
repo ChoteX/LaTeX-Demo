@@ -84,7 +84,7 @@ body {
 .cli-spinner {
   width: 1.5rem;
   height: 1.5rem;
-  display: grid;
+  display: inline-grid;
   grid-template-columns: repeat(3, 1fr);
   grid-template-rows: repeat(3, 1fr);
   gap: 0.15rem;
@@ -96,6 +96,7 @@ body {
   border-radius: 999px;
   background-color: currentColor;
   opacity: 0.18;
+  display: block;
   animation: cliSpinnerPulse 1.6s steps(1) infinite;
 }
 
