@@ -50,101 +50,43 @@ const DEFAULT_LATEX_SAMPLE = String.raw`
 \usepackage[utf8]{inputenc}
 \usepackage[margin=2cm]{geometry}
 \usepackage{amsmath,amssymb}
-\usepackage{multicol}
-\usepackage[inline]{enumitem}
 
-% One-line multiple-choice list environment
-\newlist{choices}{enumerate*}{1}
-\setlist[choices]{label=ა), itemjoin=\hspace{1.5em}, itemsep=0pt, topsep=0pt}
 \begin{document}
 
-\section*{საკონტროლო ტესტი N 2 (ა)}
+\section*{Math Test - 2}
 
 \begin{enumerate}
-\item $0{,}5+\dfrac{1}{3}=$
 
-\begin{choices}
-  \item $\dfrac{1}{6}$ \item $\dfrac{5}{6}$ \item $\dfrac{1}{4}$ \item $\dfrac{2}{3}$
-\end{choices}\vspace{1em}
+\item Calculate the value of $2.25 - \frac{3}{4}$.\\
+a) $1$ \quad b) $1.5$ \quad c) $2$ \quad d) $0.5$
 
-\item $\dfrac{3}{7} \cdot \dfrac{7}{3}=$
+\item Evaluate the expression $\frac{5}{2} \div \frac{1}{4} - 3$.\\
+a) $7$ \quad b) $1$ \quad c) $-2$ \quad d) $4$
 
-\begin{choices}
-  \item $19$ \item $2$ \item $10$ \item $2$
-\end{choices}\vspace{1em}
+\item If $x = \frac{1}{2}$ and $y = \frac{2}{3}$, what is the value of $x^2 + y$?\\
+a) $\frac{7}{6}$ \quad b) $\frac{3}{5}$ \quad c) $\frac{11}{12}$ \quad d) $1$
 
-\item $\left(3\dfrac{1}{3}\right)^2=$
+\item Simplify the expression $\frac{1.2 \times 0.5}{0.03}$.\\
+a) $2$ \quad b) $20$ \quad c) $0.2$ \quad d) $200$
 
-\begin{choices}
-  \item $9\dfrac{1}{9}$ \item $6\dfrac{1}{9}$ \item $10\dfrac{1}{9}$ \item $11\dfrac{1}{9}$
-\end{choices}\vspace{1em}
+\item A recipe calls for $1\frac{1}{2}$ cups of flour to make 12 cookies. How many cups of flour are needed to make 30 cookies?\\
+a) $2\frac{1}{2}$ \quad b) $3$ \quad c) $3\frac{1}{4}$ \quad d) $3\frac{3}{4}$
 
-\item $\dfrac{0{,}09-0{,}02}{0{,}003} =$
+\item How many integers are there between $-4.2$ and $3.8$?\\
+a) $6$ \quad b) $7$ \quad c) $8$ \quad d) $9$
 
-\begin{choices}
-  \item $0,6$ \item $0,06$ \item $0,006$ \item $6$
-\end{choices}\vspace{1em}
+\item What is the product of the opposite of $-\frac{4}{5}$ and the reciprocal of $2$?\\
+a) $-\frac{2}{5}$ \quad b) $\frac{8}{5}$ \quad c) $-\frac{5}{8}$ \quad d) $\frac{2}{5}$
 
-\item $\dfrac{0{,}04 \cdot 0{,}28}{0{,}4 \cdot 0{,}7} =$
+\item Which of the following fractions is the largest?\\
+a) $\frac{4}{7}$ \quad b) $\frac{1}{2}$ \quad c) $\frac{5}{9}$ \quad d) $\frac{3}{5}$
 
-\begin{choices}
-  \item $0,04$ \item $0,004$ \item $0,7$ \item $0,4$
-\end{choices}\vspace{1em}
+\item Calculate $\left(2\frac{1}{3} - 1\frac{1}{2}\right) \div \frac{5}{6}$.\\
+a) $\frac{5}{6}$ \quad b) $1$ \quad c) $\frac{6}{5}$ \quad d) $\frac{25}{36}$
 
-\item $\dfrac{\dfrac{1}{5}-\dfrac{4}{5}}{4-1} =$
+\item What is $25\%$ of the sum of $\frac{1}{2}$ and $\frac{3}{4}$?\\
+a) $\frac{5}{8}$ \quad b) $\frac{1}{4}$ \quad c) $\frac{5}{16}$ \quad d) $\frac{1}{2}$
 
-\begin{choices}
-\item $\dfrac{4}{5}$ \item $1$ \item $\dfrac{5}{4}$ \item $\dfrac{1}{20}$
-\end{choices}
-\end{enumerate}
-
-
-
-\begin{enumerate}[start=7]
-    \item რამდენი მთელი რიცხვია $-3\frac{1}{10}$-სა და $2\frac{5}{7}$-ს შორის?\\
-    ა) 6 \quad ბ) 5 \quad გ) 4 \quad დ) 8
-
-\item იპოვეთ $a$-ს შებრუნებული რიცხვი, თუ $a=3\cdot (1\frac{1}{3} - \frac{1}{2})$\\
-    ა) $\frac{5}{2}$ \quad ბ) $\frac{2}{5}$ \quad გ) $-\frac{5}{2}$ \quad დ) $-\frac{2}{5}$
-
-\item იპოვეთ $b$-ს მოპირდაპირე რიცხვი, თუ $b=5\cdot (1\frac{1}{3} - \frac{1}{2})$\\
-    ა) $\frac{5}{6}$ \quad ბ) $-\frac{5}{6}$ \quad გ) $\frac{6}{5}$ \quad დ) $-\frac{6}{5}$
-
-    \item გამოთვალეთ $\frac{a+1}{a-1}$, თუ $a=\frac{2}{3}$\\
-    ა) $-3$ \quad ბ) $3$ \quad გ) $5$ \quad დ) $-5$
-
-    \item $\frac{0,15 \cdot 60}{4,5}=$\\
-    ა) 20 \quad ბ) 200 \quad გ) 2 \quad დ) 1,25
-
-    \item მიუთითეთ ყველაზე დიდი რიცხვი\\
-    ა) 0,00132 \quad ბ) 0,01799 \quad გ) 0,12505 \quad დ) 0,12601
-
-    \item $\frac{421}{27}$ წილადის მთელი ნაწილი რამდენითაა მეტი $\frac{273}{27}$ წილადის მთელ ნაწილზე?\\
-    ა) 2-ით \quad ბ) 3-ით \quad გ) 4-ით \quad დ) 5-ით
-
-    \item მიუთითეთ უმცირესი წილადი\\
-    ა) $\frac{15}{40}$ \quad ბ) $\frac{225}{300}$ \quad გ) $\frac{48}{64}$ \quad დ) $\frac{5}{45}$
-
-    \item იპოვეთ ყველა მთელი რიცხვის ჯამი, რომელიც მოთავსებულია $-7,5$-სა და $5,2$-ს შორის\\
-    ა) $-13$ \quad ბ) $-12$ \quad გ) $-11$ \quad დ) $-10$
-
-    \item ქვემოთ ჩამოთვლილაგან რომელი წილადია $\frac{1}{6}$-ზე მეტი და $\frac{2}{5}$-ზე ნაკლები?\\
-    ა) $\frac{2}{3}$ \quad ბ) $\frac{1}{7}$ \quad გ) $\frac{1}{5}$ \quad დ) $\frac{1}{2}$
-\end{enumerate}
-
-
-\begin{enumerate}[start=17]
-    \item დადექით $a = \frac{7}{20};\ b = \frac{11}{21};\ c = \frac{11}{30}$ ჩაწერეთ ზრდადობის მიხედვით\\[0.2em]
-    ა) $a,\ c,\ b$ \quad ბ) $a,\ b,\ c$ \quad გ) $c,\ b,\ a$ \quad დ) $b,\ c,\ a$
-
-    \item შედარეთ $A_1 = \frac{1}{2}+\frac{2}{3}+\frac{3}{4}$ და $A_2 = \frac{1}{3}+\frac{4}{5}+\frac{5}{6}$\\[0.2em]
-    ა) $A_1 > A_2$ \quad ბ) $A_1 < A_2$ \quad გ) $A_1 = A_2$ \quad დ) შედარება შეუძლებელია
-
-    \item $AB$ მოღრძო. $BC$ მოღრძოზე $\frac{2}{3}\cdot\frac{3}{10}$-ით მეტია. $BC$ მოღრძოს სიგრძე $7\frac{3}{5}$. რამდენი ზომაა $AB$ მოღრძომ $BC$ მოღრძოზე?\\[0.2em]
-    ა) $\frac{76}{53}$-ჯერ \quad ბ) 2-ჯერ \quad გ) $1\frac{1}{2}$-ჯერ \quad დ) შედარება შეუძლებელია
-
-    \item $A,\ B$ და $C$ წრფეზე რომელი წერტილებია მიჩილდუებული. $B$ წერტილი $A$ და $C$ წერტილებს შორისაა. $AB$ მოღრძოს სიგრძე $2\frac{3}{5}$ მხარით მეტია $BC$ მოღრძოს სიგრძეზე. რამდენი ზომაა $AC$ მოღრძომ სიგრძე $BC$ მოღრძოს სიგრძეზე?\\[0.2em]
-    ა) $1\frac{3}{5}$-ჯერ \quad ბ) 2-ჯერ \quad გ) $\frac{5}{3}$-ჯერ \quad დ) შედარება შეუძლებელია
 \end{enumerate}
 
 \end{document}
@@ -311,8 +253,12 @@ const App: React.FC = () => {
               color: 'var(--color-text-primary)',
               backgroundColor: 'var(--color-surface)',
             }}
+            aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+            title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
           >
-            {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
+            <span className="text-2xl" role="img" aria-hidden="true">
+              {theme === 'light' ? '🌞' : '🌙'}
+            </span>
           </button>
         </div>
 
@@ -363,7 +309,10 @@ const App: React.FC = () => {
               <h3 className="text-xl font-semibold text-center" style={{ color: 'var(--color-text-primary)' }}>
                 Generation Options
               </h3>
-              <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div
+                className="mt-6 grid gap-6"
+                style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}
+              >
                 <div>
                   <label
                     htmlFor="num-exercises"
