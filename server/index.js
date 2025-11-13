@@ -10,6 +10,33 @@ const app = express();
 const port = process.env.PORT || 4000;
 const modelName = process.env.GEMINI_MODEL || 'gemini-2.5-pro';
 const maxExercises = Number(process.env.MAX_EXERCISES || 30);
+const DEFAULT_CHOICE_LABEL_CONFIG = {
+  displayName: 'English',
+  labels: ['a)', 'b)', 'c)', 'd)'],
+};
+const CHOICE_LABELS_BY_LANGUAGE = {
+  georgian: {
+    displayName: 'Georgian',
+    labels: ['ა)', 'ბ)', 'გ)', 'დ)'],
+  },
+  english: DEFAULT_CHOICE_LABEL_CONFIG,
+  portuguese: {
+    displayName: 'Portuguese',
+    labels: ['a)', 'b)', 'c)', 'd)'],
+  },
+  ukrainian: {
+    displayName: 'Ukrainian',
+    labels: ['а)', 'б)', 'в)', 'г)'],
+  },
+};
+
+const resolveChoiceLabelConfig = (language) => {
+  if (!language || typeof language !== 'string') {
+    return DEFAULT_CHOICE_LABEL_CONFIG;
+  }
+  const normalized = language.trim().toLowerCase();
+  return CHOICE_LABELS_BY_LANGUAGE[normalized] || DEFAULT_CHOICE_LABEL_CONFIG;
+};
 const normalizeOrigin = (value) => {
   if (!value) return null;
   const trimmed = value.trim();
@@ -107,6 +134,10 @@ app.post('/api/generate', async (req, res) => {
     medium: 'of a similar difficulty to',
     harder: 'noticeably harder than',
   }[difficulty] || 'of a similar difficulty to';
+  const choiceLabelConfig = resolveChoiceLabelConfig(language);
+  const choiceLabelExample = choiceLabelConfig.labels
+    .map((label, index) => `${label} Option ${index + 1}`)
+    .join(' \\quad ');
 
   const prompt = `
     You are an expert math test generator. Your output must be valid LaTeX code.
@@ -118,9 +149,8 @@ app.post('/api/generate', async (req, res) => {
     2. Be written in the ${language} language.
     3. Be formatted correctly within a valid LaTeX document structure. The structure of your response should mirror the input's structure (e.g., if it uses \\begin{document}, \\section, \\item, etc., your output should too).
     4. Do not include the original problems in your response. Only generate the new problems.
-    5. When you include multiple-choice options, render them inline on one line using Georgian letters as labels: 
-       "ა) <option> \\quad ბ) <option> \\quad გ) <option> \\quad დ) <option>".
-       Do not rely on custom environments or enumitem; write them directly as inline text with math in $...$ where needed.
+    5. When you include multiple-choice options, render them inline on one line using ${choiceLabelConfig.displayName} letters (${choiceLabelConfig.labels.join(', ')}) as labels. For example: "${choiceLabelExample}".
+       Do not rely on custom environments or enumitem; write them directly as inline text with math in $...$ where needed. If you need additional options, continue with the next letters of the same alphabet.
 
     Existing LaTeX Test Script:
     ---

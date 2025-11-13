@@ -88,6 +88,12 @@ To keep documents consistent and preview-friendly, the generator follows these r
 - Content
   - Generate exactly the requested number of new problems, in the requested language and difficulty
   - Output only LaTeX (no Markdown code fences, comments, or explanations)
+- Multiple choice formatting
+  - Inline choice labels respect the selected language to keep documents consistent:
+    - Georgian → `ა)`, `ბ)`, `გ)`, `დ)`
+    - English / Portuguese → `a)`, `b)`, `c)`, `d)`
+    - Ukrainian → `а)`, `б)`, `в)`, `г)`
+  - Continue with the next character in the same alphabet if you need more than four options
 
 Notes:
 - The frontend preview strips unsupported packages automatically for display only.
