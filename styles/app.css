@@ -94,7 +94,7 @@ body {
   width: 0.35rem;
   height: 0.35rem;
   border-radius: 999px;
-  background-color: var(--spinner-color);
+  background-color: currentColor;
   opacity: 0.18;
   animation: cliSpinnerPulse 1.6s steps(1) infinite;
 }

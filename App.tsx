@@ -288,15 +288,16 @@ const App: React.FC = () => {
   const disableGenerate = isLoading || !inputText.trim();
 
   const mainPanelStyle: React.CSSProperties = {
-    flexBasis: isCanvasVisible ? '50%' : '100%',
-    transform: isCanvasVisible ? 'translateX(-8px)' : 'translateX(0)',
+    flexBasis: isCanvasVisible ? '45%' : '100%',
+    maxWidth: isCanvasVisible ? '45%' : '100%',
+    transform: isCanvasVisible ? 'translateX(-12px)' : 'translateX(0)',
   };
 
   const canvasPanelStyle: React.CSSProperties = {
-    flexBasis: isCanvasVisible ? '50%' : '0%',
-    maxWidth: isCanvasVisible ? '50%' : '0%',
+    flexBasis: isCanvasVisible ? '55%' : '0%',
+    maxWidth: isCanvasVisible ? '55%' : '0%',
     opacity: isCanvasVisible ? 1 : 0,
-    transform: isCanvasVisible ? 'translateX(0)' : 'translateX(40px)',
+    transform: isCanvasVisible ? 'translateX(0)' : 'translateX(60px)',
     pointerEvents: isCanvasVisible ? 'auto' : 'none',
   };
 
@@ -336,6 +337,30 @@ const App: React.FC = () => {
             style={mainPanelStyle}
           >
             <LatexInput value={inputText} onChange={setInputText} placeholder={DEFAULT_LATEX_SAMPLE} />
+
+            {outputText && (
+              <button
+                type="button"
+                onClick={handleArtifactCardClick}
+                className="surface-muted mt-6 w-full text-left rounded-2xl p-5 flex items-center justify-between transition"
+                style={{ borderColor: 'var(--color-border-muted)' }}
+              >
+                <div>
+                  <p className="text-xs uppercase tracking-[0.25em]" style={{ color: 'var(--color-secondary)' }}>
+                    Canvas
+                  </p>
+                  <p className="text-lg font-semibold mt-1" style={{ color: 'var(--color-text-primary)' }}>
+                    {isArtifactOpen ? 'Hide canvas view' : 'Click to open the canvas'}
+                  </p>
+                </div>
+                <span
+                  className="text-3xl transition-transform"
+                  style={{ color: 'var(--color-accent)', transform: isArtifactOpen ? 'rotate(90deg)' : 'rotate(0deg)' }}
+                >
+                  &rsaquo;
+                </span>
+              </button>
+            )}
 
             <div className="surface-muted mt-8 p-6 rounded-2xl">
               <h3 className="text-xl font-semibold text-center" style={{ color: 'var(--color-text-primary)' }}>
@@ -426,7 +451,9 @@ const App: React.FC = () => {
               <Button onClick={handleGenerate} disabled={disableGenerate}>
                 {isLoading ? (
                   <div className="flex items-center justify-center gap-3">
-                    <CliSpinner />
+                    <span style={{ color: '#fff' }}>
+                      <CliSpinner />
+                    </span>
                     <span className="font-semibold tracking-wide">Generating…</span>
                   </div>
                 ) : (
@@ -444,29 +471,6 @@ const App: React.FC = () => {
               </div>
             )}
 
-            {outputText && (
-              <button
-                type="button"
-                onClick={handleArtifactCardClick}
-                className="surface-muted mt-10 w-full text-left rounded-2xl p-5 flex items-center justify-between transition"
-                style={{ borderColor: 'var(--color-border-muted)' }}
-              >
-                <div>
-                  <p className="text-xs uppercase tracking-[0.25em]" style={{ color: 'var(--color-secondary)' }}>
-                    Canvas
-                  </p>
-                  <p className="text-lg font-semibold mt-1" style={{ color: 'var(--color-text-primary)' }}>
-                    {isArtifactOpen ? 'Hide canvas view' : 'Click to open the canvas'}
-                  </p>
-                </div>
-                <span
-                  className="text-3xl transition-transform"
-                  style={{ color: 'var(--color-accent)', transform: isArtifactOpen ? 'rotate(90deg)' : 'rotate(0deg)' }}
-                >
-                  &rsaquo;
-                </span>
-              </button>
-            )}
           </main>
 
           {shouldRenderCanvas && (
@@ -538,7 +542,7 @@ const App: React.FC = () => {
                       </pre>
                     )
                   ) : (
-                    <div className="h-full overflow-auto p-4">
+                    <div className="h-full p-4">
                       <LatexPreview
                         latex={editableLatex}
                         title="Canvas Preview"

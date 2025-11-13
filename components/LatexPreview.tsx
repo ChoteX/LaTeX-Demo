@@ -153,7 +153,10 @@ const LatexPreview: React.FC<LatexPreviewProps> = ({
 
   if (variant === 'embedded') {
     return (
-      <div className="rounded-2xl canvas-surface overflow-auto" style={stageStyle}>
+      <div
+        className="rounded-2xl canvas-surface overflow-auto"
+        style={{ ...stageStyle, color: 'var(--color-text-primary)' }}
+      >
         {renderStageContent()}
       </div>
     );
@@ -173,8 +176,8 @@ const LatexPreview: React.FC<LatexPreviewProps> = ({
       </div>
 
       <div
-        className="latex-preview-stage canvas-surface text-[#2f2e2a] rounded-2xl overflow-auto"
-        style={stageStyle}
+        className="latex-preview-stage canvas-surface rounded-2xl overflow-auto"
+        style={{ ...stageStyle, color: 'var(--color-text-primary)' }}
       >
         {renderStageContent()}
       </div>
