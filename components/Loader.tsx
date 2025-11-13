@@ -4,7 +4,8 @@ import React from 'react';
 const Loader: React.FC = () => (
   <div className="flex justify-center items-center" aria-label="Loading...">
     <svg
-      className="animate-spin h-6 w-6 text-[#c15f3c]"
+      className="animate-spin h-6 w-6"
+      style={{ color: 'var(--color-accent)' }}
       xmlns="http://www.w3.org/2000/svg"
       fill="none"
       viewBox="0 0 24 24"

@@ -12,6 +12,7 @@ interface LatexPreviewProps {
   isLoading?: boolean;
   height?: number;
   variant?: 'default' | 'embedded';
+  aspectRatio?: string;
 }
 
 const LatexPreview: React.FC<LatexPreviewProps> = ({
@@ -21,6 +22,7 @@ const LatexPreview: React.FC<LatexPreviewProps> = ({
   isLoading = false,
   height = 384,
   variant = 'default',
+  aspectRatio = '210 / 297',
 }) => {
   const [error, setError] = useState<string | null>(null);
   const [renderedHtml, setRenderedHtml] = useState<string>('');
@@ -107,7 +109,7 @@ const LatexPreview: React.FC<LatexPreviewProps> = ({
   const renderStageContent = () => {
     if (isLoading) {
       return (
-        <div className="flex items-center justify-center h-full py-10 text-[#908a80]">
+        <div className="flex items-center justify-center h-full py-10 text-muted">
           <Loader />
           <span className="ml-3">Preparing preview…</span>
         </div>
@@ -116,7 +118,7 @@ const LatexPreview: React.FC<LatexPreviewProps> = ({
 
     if (shouldShowPlaceholderMessage) {
       return (
-        <div className="h-full flex items-center justify-center text-center text-sm text-[#908a80] px-6 py-12">
+        <div className="h-full flex items-center justify-center text-center text-sm text-muted px-6 py-12">
           {emptyMessage}
         </div>
       );
@@ -124,7 +126,7 @@ const LatexPreview: React.FC<LatexPreviewProps> = ({
 
     if (!isLoading && !showPlaceholder && error) {
       return (
-        <div className="p-4 text-sm text-[#b04a2c]">
+        <div className="p-4 text-sm" style={{ color: '#b04a2c' }}>
           <p className="font-medium mb-1">Preview unavailable</p>
           <p>{error}</p>
         </div>
@@ -143,31 +145,36 @@ const LatexPreview: React.FC<LatexPreviewProps> = ({
     return null;
   };
 
+  const stageStyle: React.CSSProperties = {
+    aspectRatio,
+    maxHeight: height,
+    width: '100%',
+  };
+
   if (variant === 'embedded') {
     return (
-      <div
-        className="rounded-xl bg-white text-[#2f2e2a] border border-[#e4ddcf] overflow-auto"
-        style={{ minHeight: `${height / 2}px`, maxHeight: `${height}px` }}
-      >
+      <div className="rounded-2xl canvas-surface overflow-auto" style={stageStyle}>
         {renderStageContent()}
       </div>
     );
   }
 
   return (
-    <section className="latex-preview bg-white border border-[#e6e0d4] rounded-2xl p-4">
+    <section className="latex-preview surface-card rounded-2xl p-4">
       <div className="flex items-center justify-between gap-4 mb-3">
         <div>
-          <h3 className="text-lg font-semibold text-[#2f2e2a]">{title}</h3>
-          <p className="text-xs text-[#8a867c]">
+          <h3 className="text-lg font-semibold" style={{ color: 'var(--color-text-primary)' }}>
+            {title}
+          </h3>
+          <p className="text-xs text-muted">
             Rendered locally. Complex packages may not be fully supported.
           </p>
         </div>
       </div>
 
       <div
-        className="latex-preview-stage bg-[#fdfbf5] text-[#2f2e2a] rounded-2xl border border-[#ebe4d6] overflow-auto"
-        style={{ minHeight: `${height / 2}px`, maxHeight: `${height}px` }}
+        className="latex-preview-stage canvas-surface text-[#2f2e2a] rounded-2xl overflow-auto"
+        style={stageStyle}
       >
         {renderStageContent()}
       </div>

@@ -10,7 +10,11 @@ interface LatexInputProps {
 const LatexInput: React.FC<LatexInputProps> = ({ value, onChange, placeholder }) => {
   return (
     <div className="w-full">
-      <label htmlFor="latex-input" className="block text-lg font-medium text-[#2f2e2a] mb-2">
+      <label
+        htmlFor="latex-input"
+        className="block text-lg font-medium mb-2"
+        style={{ color: 'var(--color-text-primary)' }}
+      >
         Paste Existing LaTeX Script
       </label>
       <textarea
@@ -18,7 +22,8 @@ const LatexInput: React.FC<LatexInputProps> = ({ value, onChange, placeholder })
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full h-64 p-4 bg-[#fdfbf5] border border-[#d8d2c4] rounded-2xl text-[#2f2e2a] placeholder:text-[#9b958a] font-mono text-sm resize-y focus:ring-2 focus:ring-[#c15f3c] focus:border-[#c15f3c] outline-none transition-colors"
+        className="input-field w-full h-64 p-4 rounded-2xl font-mono text-sm resize-none focus:ring-2 focus:ring-[#c15f3c] focus:border-[#c15f3c] outline-none transition-colors"
+        style={{ backgroundColor: 'var(--color-input-bg)' }}
         spellCheck="false"
       />
     </div>

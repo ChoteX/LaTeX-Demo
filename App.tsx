@@ -1,9 +1,9 @@
-
 import React, { useState, useCallback, useEffect } from 'react';
 import { generateTestSamples } from './services/geminiService';
 import LatexInput from './components/LatexInput';
 import Button from './components/Button';
 import LatexPreview from './components/LatexPreview';
+import CliSpinner from './components/CliSpinner';
 import './styles/app.css';
 
 const FRIENDLY_RETRY_MESSAGES: Record<string, string> = {
@@ -12,7 +12,6 @@ const FRIENDLY_RETRY_MESSAGES: Record<string, string> = {
   portuguese: 'O gerador está ocupado no momento. Tente novamente em cerca de um minuto.',
   ukrainian: 'Генератор зараз зайнятий. Спробуйте ще раз приблизно за хвилину.',
 };
-const CLI_SPINNER_FRAMES = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧'];
 
 const FRIENDLY_ERROR_PATTERNS = [
   /failed to generate test/i,
@@ -27,6 +26,12 @@ const FRIENDLY_ERROR_PATTERNS = [
   /503/,
   /429/,
 ];
+
+const CLIENT_RETRYABLE_PATTERNS = [/overloaded/i, /try again later/i, /unavailable/i, /503/, /429/];
+const CLIENT_RETRY_DELAYS_MS = [60000];
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+type ThemeMode = 'light' | 'dark';
 
 const getFriendlyRetryMessage = (language: string): string => {
   const normalized = (language || '').trim().toLowerCase();
@@ -148,6 +153,7 @@ const DEFAULT_LATEX_SAMPLE = String.raw`
 const App: React.FC = () => {
   const [inputText, setInputText] = useState<string>(DEFAULT_LATEX_SAMPLE);
   const [outputText, setOutputText] = useState<string>('');
+  const [editableLatex, setEditableLatex] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -157,44 +163,95 @@ const App: React.FC = () => {
   const [isArtifactOpen, setIsArtifactOpen] = useState<boolean>(false);
   const [activeArtifactTab, setActiveArtifactTab] = useState<'code' | 'preview'>('code');
   const [artifactCopied, setArtifactCopied] = useState<boolean>(false);
-  const [spinnerFrameIndex, setSpinnerFrameIndex] = useState<number>(0);
-  
+  const [theme, setTheme] = useState<ThemeMode>('light');
+  const [isEditingCanvas, setIsEditingCanvas] = useState<boolean>(false);
+  const [shouldRenderCanvas, setShouldRenderCanvas] = useState<boolean>(false);
+
+  const isCanvasVisible = Boolean(outputText) && isArtifactOpen;
+
   useEffect(() => {
     if (!outputText) {
       setIsArtifactOpen(false);
       setActiveArtifactTab('code');
       setArtifactCopied(false);
+      setIsEditingCanvas(false);
     }
   }, [outputText]);
 
   useEffect(() => {
-    if (!isLoading) {
-      setSpinnerFrameIndex(0);
+    if (outputText) {
+      setEditableLatex(outputText);
+    }
+  }, [outputText]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const storedTheme = window.localStorage.getItem('mtg-theme') as ThemeMode | null;
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
+    const initial = storedTheme ?? (prefersDark.matches ? 'dark' : 'light');
+    setTheme(initial);
+    const listener = (event: MediaQueryListEvent) => {
+      if (!window.localStorage.getItem('mtg-theme')) {
+        setTheme(event.matches ? 'dark' : 'light');
+      }
+    };
+    prefersDark.addEventListener('change', listener);
+    return () => prefersDark.removeEventListener('change', listener);
+  }, []);
+
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    document.documentElement.setAttribute('data-theme', theme);
+    window.localStorage.setItem('mtg-theme', theme);
+  }, [theme]);
+
+  useEffect(() => {
+    if (isCanvasVisible) {
+      setShouldRenderCanvas(true);
       return;
     }
-    const intervalId = window.setInterval(() => {
-      setSpinnerFrameIndex((prev) => (prev + 1) % CLI_SPINNER_FRAMES.length);
-    }, 180);
-    return () => window.clearInterval(intervalId);
-  }, [isLoading]);
+    const timer = window.setTimeout(() => setShouldRenderCanvas(false), 500);
+    return () => window.clearTimeout(timer);
+  }, [isCanvasVisible]);
+
+  const toggleTheme = () => {
+    setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
+  };
+
+  const runGenerationWithRetry = useCallback(async () => {
+    for (let attempt = 0; attempt <= CLIENT_RETRY_DELAYS_MS.length; attempt += 1) {
+      try {
+        return await generateTestSamples(inputText, numExercises, difficulty, language);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        const shouldRetry = CLIENT_RETRYABLE_PATTERNS.some((pattern) => pattern.test(message));
+        if (attempt === CLIENT_RETRY_DELAYS_MS.length || !shouldRetry) {
+          throw error instanceof Error ? error : new Error(message);
+        }
+        setError('Generator is busy. Retrying automatically in 60 seconds…');
+        await sleep(CLIENT_RETRY_DELAYS_MS[attempt]);
+      }
+    }
+    throw new Error('Unable to generate test.');
+  }, [inputText, numExercises, difficulty, language]);
 
   const handleGenerate = useCallback(async () => {
     setError(null);
     setIsLoading(true);
     setOutputText('');
+    setEditableLatex('');
     setIsArtifactOpen(false);
     setActiveArtifactTab('code');
     setArtifactCopied(false);
+    setIsEditingCanvas(false);
 
     try {
-      const result = await generateTestSamples(inputText, numExercises, difficulty, language);
-      if (result.startsWith('Error:')) {
-        setError(getFriendlyRetryMessage(language));
-      } else {
-        setOutputText(result);
-        setIsArtifactOpen(true);
-        setActiveArtifactTab('code');
-      }
+      const result = await runGenerationWithRetry();
+      setOutputText(result);
+      setEditableLatex(result);
+      setIsArtifactOpen(true);
+      setActiveArtifactTab('code');
+      setError(null);
     } catch (e: unknown) {
       const errorMessage = e instanceof Error ? e.message : 'An unexpected error occurred.';
       const displayMessage = shouldShowFriendlyMessage(errorMessage)
@@ -204,7 +261,7 @@ const App: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [inputText, numExercises, difficulty, language]);
+  }, [language, runGenerationWithRetry]);
 
   const handleArtifactCardClick = () => {
     if (!outputText) return;
@@ -218,44 +275,78 @@ const App: React.FC = () => {
   };
 
   const handleCopyArtifact = () => {
-    if (!outputText) return;
-    navigator.clipboard.writeText(outputText);
+    if (!editableLatex.trim()) return;
+    navigator.clipboard.writeText(editableLatex);
     setArtifactCopied(true);
     setTimeout(() => setArtifactCopied(false), 2000);
   };
 
-  const mainPanelClasses = [
-    'bg-white border border-[#e6e0d4] rounded-3xl shadow-sm p-6 sm:p-8 flex-1 transition-all duration-500 ease-out',
-    isArtifactOpen ? 'lg:w-2/3 lg:-translate-x-4' : ''
-  ]
-    .join(' ')
-    .trim();
-  const spinnerFrame = CLI_SPINNER_FRAMES[spinnerFrameIndex];
+  const handleEditToggle = () => {
+    setIsEditingCanvas((prev) => !prev);
+  };
+
+  const disableGenerate = isLoading || !inputText.trim();
+
+  const mainPanelStyle: React.CSSProperties = {
+    flexBasis: isCanvasVisible ? '50%' : '100%',
+    transform: isCanvasVisible ? 'translateX(-8px)' : 'translateX(0)',
+  };
+
+  const canvasPanelStyle: React.CSSProperties = {
+    flexBasis: isCanvasVisible ? '50%' : '0%',
+    maxWidth: isCanvasVisible ? '50%' : '0%',
+    opacity: isCanvasVisible ? 1 : 0,
+    transform: isCanvasVisible ? 'translateX(0)' : 'translateX(40px)',
+    pointerEvents: isCanvasVisible ? 'auto' : 'none',
+  };
 
   return (
-    <div className="min-h-screen bg-[#f4f3ee] text-[#2f2e2a] font-sans">
+    <div className="min-h-screen font-sans" style={{ backgroundColor: 'var(--color-bg)' }}>
       <div className="w-full max-w-6xl mx-auto px-4 py-8 sm:py-10">
+        <div className="flex justify-end mb-4">
+          <button
+            type="button"
+            onClick={toggleTheme}
+            className="px-4 py-2 rounded-full text-sm font-semibold border transition"
+            style={{
+              borderColor: 'var(--color-border)',
+              color: 'var(--color-text-primary)',
+              backgroundColor: 'var(--color-surface)',
+            }}
+          >
+            {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
+          </button>
+        </div>
+
         <header className="text-center mb-10">
-          <p className="text-sm uppercase tracking-[0.3em] text-[#b1ada1]">ExpoV</p>
-          <h1 className="text-4xl sm:text-5xl font-bold text-[#2f2e2a] mt-2">Math Test Generator</h1>
-          <p className="mt-3 text-lg text-[#5c5b57]">
+          <p className="text-sm uppercase tracking-[0.3em]" style={{ color: 'var(--color-secondary)' }}>
+            ExpoV
+          </p>
+          <h1 className="text-4xl sm:text-5xl font-bold mt-2" style={{ color: 'var(--color-text-primary)' }}>
+            Math Test Generator
+          </h1>
+          <p className="mt-3 text-lg text-muted">
             Generate fresh LaTeX math problems styled exactly like your original script.
           </p>
         </header>
 
-        <div className={`flex flex-col gap-6 ${isArtifactOpen ? 'lg:flex-row lg:items-start' : ''}`}>
-          <main className={mainPanelClasses}>
-            <LatexInput
-              value={inputText}
-              onChange={setInputText}
-              placeholder={DEFAULT_LATEX_SAMPLE}
-            />
+        <div className="flex flex-col gap-6 lg:flex-row">
+          <main
+            className="surface-card rounded-3xl shadow-sm p-6 sm:p-8 transition-all duration-500 ease-out"
+            style={mainPanelStyle}
+          >
+            <LatexInput value={inputText} onChange={setInputText} placeholder={DEFAULT_LATEX_SAMPLE} />
 
-            <div className="mt-8 p-6 bg-[#f9f6f0] rounded-2xl border border-[#ebe4d6]">
-              <h3 className="text-xl font-semibold text-[#2f2e2a] mb-6 text-center">Generation Options</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="surface-muted mt-8 p-6 rounded-2xl">
+              <h3 className="text-xl font-semibold text-center" style={{ color: 'var(--color-text-primary)' }}>
+                Generation Options
+              </h3>
+              <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
-                  <label htmlFor="num-exercises" className="block text-sm font-medium text-[#5c5b57] mb-2">
+                  <label
+                    htmlFor="num-exercises"
+                    className="block text-sm font-medium text-muted mb-2 whitespace-nowrap leading-tight"
+                  >
                     Number of Exercises
                   </label>
                   <input
@@ -268,16 +359,19 @@ const App: React.FC = () => {
                     }}
                     min="1"
                     max="30"
-                    className="w-full bg-white border border-[#d8d2c4] rounded-xl p-2.5 text-[#2f2e2a] focus:ring-2 focus:ring-[#c15f3c] focus:border-[#c15f3c] outline-none transition"
+                    className="input-field w-full rounded-xl p-2.5 focus:ring-2 focus:ring-[#c15f3c] focus:border-[#c15f3c] outline-none transition"
                     aria-describedby="num-exercises-description"
                   />
-                  <p className="text-xs text-[#8a867c] mt-1" id="num-exercises-description">
+                  <p className="text-xs text-muted mt-1" id="num-exercises-description">
                     Max: 30
                   </p>
                 </div>
 
                 <div>
-                  <label htmlFor="difficulty" className="block text-sm font-medium text-[#5c5b57] mb-2">
+                  <label
+                    htmlFor="difficulty"
+                    className="block text-sm font-medium text-muted mb-2 whitespace-nowrap leading-tight"
+                  >
                     Difficulty
                   </label>
                   <div className="relative">
@@ -285,22 +379,25 @@ const App: React.FC = () => {
                       id="difficulty"
                       value={difficulty}
                       onChange={(e) => setDifficulty(e.target.value)}
-                      className="w-full bg-white border border-[#d8d2c4] rounded-xl p-2.5 text-[#2f2e2a] focus:ring-2 focus:ring-[#c15f3c] focus:border-[#c15f3c] outline-none appearance-none pr-8 transition"
+                      className="input-field w-full rounded-xl p-2.5 appearance-none focus:ring-2 focus:ring-[#c15f3c] focus:border-[#c15f3c] outline-none transition"
                     >
                       <option value="easier">Easier</option>
                       <option value="medium">Medium (Similar)</option>
                       <option value="harder">Harder</option>
                     </select>
-                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-[#b1ada1]">
+                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-muted">
                       <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
                         <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
                       </svg>
                     </div>
                   </div>
                 </div>
-                
+
                 <div>
-                  <label htmlFor="language" className="block text-sm font-medium text-[#5c5b57] mb-2">
+                  <label
+                    htmlFor="language"
+                    className="block text-sm font-medium text-muted mb-2 whitespace-nowrap leading-tight"
+                  >
                     Language
                   </label>
                   <div className="relative">
@@ -308,14 +405,14 @@ const App: React.FC = () => {
                       id="language"
                       value={language}
                       onChange={(e) => setLanguage(e.target.value)}
-                      className="w-full bg-white border border-[#d8d2c4] rounded-xl p-2.5 text-[#2f2e2a] focus:ring-2 focus:ring-[#c15f3c] focus:border-[#c15f3c] outline-none appearance-none pr-8 transition"
+                      className="input-field w-full rounded-xl p-2.5 appearance-none focus:ring-2 focus:ring-[#c15f3c] focus:border-[#c15f3c] outline-none transition"
                     >
                       <option value="Georgian">Georgian</option>
                       <option value="English">English</option>
                       <option value="Portuguese">Portuguese</option>
                       <option value="Ukrainian">Ukrainian</option>
                     </select>
-                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-[#b1ada1]">
+                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-muted">
                       <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
                         <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
                       </svg>
@@ -326,11 +423,11 @@ const App: React.FC = () => {
             </div>
 
             <div className="mt-8 text-center">
-              <Button onClick={handleGenerate} disabled={isLoading || !inputText.trim()}>
+              <Button onClick={handleGenerate} disabled={disableGenerate}>
                 {isLoading ? (
-                  <div className="flex items-center justify-center gap-3 font-mono text-base tracking-[0.2em]">
-                    <span className="text-xl">{spinnerFrame}</span>
-                    <span className="tracking-normal font-sans">Generating…</span>
+                  <div className="flex items-center justify-center gap-3">
+                    <CliSpinner />
+                    <span className="font-semibold tracking-wide">Generating…</span>
                   </div>
                 ) : (
                   'Generate Test'
@@ -339,7 +436,10 @@ const App: React.FC = () => {
             </div>
 
             {error && (
-              <div className="mt-6 p-4 bg-[#fff1ed] border border-[#f4c8b9] text-[#7a2d17] rounded-xl text-center">
+              <div
+                className="mt-6 rounded-xl px-4 py-3 text-center"
+                style={{ backgroundColor: 'var(--color-surface-muted)', border: '1px solid var(--color-border-muted)' }}
+              >
                 {error}
               </div>
             )}
@@ -348,18 +448,20 @@ const App: React.FC = () => {
               <button
                 type="button"
                 onClick={handleArtifactCardClick}
-                className="mt-10 w-full text-left bg-[#f7f3ea] border border-[#e3dac8] rounded-2xl p-5 flex items-center justify-between hover:border-[#c15f3c] transition"
+                className="surface-muted mt-10 w-full text-left rounded-2xl p-5 flex items-center justify-between transition"
+                style={{ borderColor: 'var(--color-border-muted)' }}
               >
                 <div>
-                  <p className="text-xs uppercase tracking-[0.25em] text-[#b1ada1]">Canvas</p>
-                  <p className="text-lg font-semibold text-[#2f2e2a] mt-1">
+                  <p className="text-xs uppercase tracking-[0.25em]" style={{ color: 'var(--color-secondary)' }}>
+                    Canvas
+                  </p>
+                  <p className="text-lg font-semibold mt-1" style={{ color: 'var(--color-text-primary)' }}>
                     {isArtifactOpen ? 'Hide canvas view' : 'Click to open the canvas'}
                   </p>
                 </div>
                 <span
-                  className={`text-3xl text-[#c15f3c] transition-transform ${
-                    isArtifactOpen ? 'rotate-90' : ''
-                  }`}
+                  className="text-3xl transition-transform"
+                  style={{ color: 'var(--color-accent)', transform: isArtifactOpen ? 'rotate(90deg)' : 'rotate(0deg)' }}
                 >
                   &rsaquo;
                 </span>
@@ -367,66 +469,91 @@ const App: React.FC = () => {
             )}
           </main>
 
-          {outputText && (
-            <div
-              className={`transition-all duration-500 ease-out w-full ${
-                isArtifactOpen ? 'lg:w-[34rem] xl:w-[38rem]' : 'lg:w-0'
-              }`}
-            >
-              {isArtifactOpen && (
-                <aside className="bg-white border border-[#e6e0d4] rounded-3xl shadow-sm w-full p-6 space-y-5 slide-in-right">
-                  <div>
-                    <p className="text-xs uppercase tracking-[0.35em] text-[#b1ada1] mb-3">Canvas</p>
-                  </div>
-                  <div className="flex items-center justify-between gap-3 flex-wrap">
-                    <div className="inline-flex bg-[#f4f3ee] border border-[#dcd6c9] rounded-full p-1">
-                      {(['code', 'preview'] as const).map((tab) => (
-                        <button
-                          key={tab}
-                          type="button"
-                          onClick={() => setActiveArtifactTab(tab)}
-                          className={`px-4 py-1.5 text-sm font-medium rounded-full transition ${
+          {shouldRenderCanvas && (
+            <div className="transition-all duration-500 ease-out w-full" style={canvasPanelStyle}>
+              <aside className="surface-card rounded-3xl shadow-sm w-full h-full p-6 space-y-5 slide-in-right">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.35em]" style={{ color: 'var(--color-secondary)' }}>
+                    Canvas
+                  </p>
+                </div>
+                <div className="flex items-center justify-between gap-3 flex-wrap">
+                  <div className="inline-flex surface-muted rounded-full p-1 border border-[var(--color-border-muted)]">
+                    {(['code', 'preview'] as const).map((tab) => (
+                      <button
+                        key={tab}
+                        type="button"
+                        onClick={() => setActiveArtifactTab(tab)}
+                        className={`px-4 py-1.5 text-sm font-medium rounded-full transition ${
+                          activeArtifactTab === tab ? 'shadow-sm' : ''
+                        }`}
+                        style={{
+                          backgroundColor:
+                            activeArtifactTab === tab ? 'var(--color-surface)' : 'transparent',
+                          color:
                             activeArtifactTab === tab
-                              ? 'bg-white text-[#c15f3c] shadow-sm'
-                              : 'text-[#5c5b57]'
-                          }`}
-                        >
-                          {tab === 'code' ? 'LaTeX' : 'Preview'}
-                        </button>
-                      ))}
-                    </div>
+                              ? 'var(--color-accent)'
+                              : 'var(--color-text-muted)',
+                        }}
+                      >
+                        {tab === 'code' ? 'LaTeX' : 'Preview'}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="flex items-center gap-2 flex-wrap">
                     <button
                       type="button"
+                      onClick={handleEditToggle}
+                      className="px-4 py-2 rounded-full text-sm font-semibold border transition"
+                      style={{
+                        borderColor: 'var(--color-accent)',
+                        color: 'var(--color-accent)',
+                        backgroundColor: isEditingCanvas ? 'var(--color-surface-muted)' : 'transparent',
+                      }}
+                    >
+                      {isEditingCanvas ? 'Done' : 'Edit'}
+                    </button>
+                    <Button
+                      variant="secondary"
                       onClick={handleCopyArtifact}
-                      className="px-4 py-2 text-sm font-semibold rounded-full bg-[#b1ada1] text-white hover:bg-[#9f9c92] transition"
+                      className="px-4 py-2 text-sm font-semibold rounded-full"
                     >
                       {artifactCopied ? 'Copied!' : 'Copy'}
-                    </button>
+                    </Button>
                   </div>
+                </div>
 
-                  <div className="border border-[#eee7dc] rounded-2xl bg-[#faf8f3] h-[520px] overflow-hidden">
-                    {activeArtifactTab === 'code' ? (
-                      <pre className="h-full overflow-auto p-4 text-sm leading-relaxed text-[#2f2e2a] font-mono whitespace-pre-wrap">
-                        <code>{outputText}</code>
-                      </pre>
+                <div className="canvas-surface rounded-2xl h-[520px] overflow-hidden">
+                  {activeArtifactTab === 'code' ? (
+                    isEditingCanvas ? (
+                      <textarea
+                        value={editableLatex}
+                        onChange={(e) => setEditableLatex(e.target.value)}
+                        className="input-field w-full h-full p-4 rounded-2xl font-mono text-sm resize-none focus:ring-2 focus:ring-[#c15f3c] focus:border-[#c15f3c] outline-none transition"
+                        spellCheck="false"
+                      />
                     ) : (
-                      <div className="h-full overflow-auto p-4">
-                        <LatexPreview
-                          latex={outputText}
-                          title="Canvas Preview"
-                          variant="embedded"
-                          height={500}
-                        />
-                      </div>
-                    )}
-                  </div>
-                </aside>
-              )}
+                      <pre className="h-full overflow-auto p-4 text-sm leading-relaxed font-mono whitespace-pre-wrap">
+                        <code>{editableLatex}</code>
+                      </pre>
+                    )
+                  ) : (
+                    <div className="h-full overflow-auto p-4">
+                      <LatexPreview
+                        latex={editableLatex}
+                        title="Canvas Preview"
+                        variant="embedded"
+                        height={500}
+                      />
+                    </div>
+                  )}
+                </div>
+              </aside>
             </div>
           )}
         </div>
 
-        <footer className="text-center mt-10 text-[#8d897f] text-sm">
+        <footer className="text-center mt-10 text-muted text-sm">
           <p>© {new Date().getFullYear()} ExpoV. All rights reserved.</p>
         </footer>
       </div>
