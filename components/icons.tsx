@@ -23,7 +23,7 @@ export const MoonIcon: React.FC<IconProps> = ({ size = 22, ...rest }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" {...rest}>
     <path
       {...baseStrokeProps}
-      d="M20 15.5A8 8 0 0 1 8.5 4 6.5 6.5 0 1 0 20 15.5Z"
+      d="M20 15.2A8.7 8.7 0 0 1 9.3 4a6.2 6.2 0 1 0 10.7 11.2Z"
     />
   </svg>
 );

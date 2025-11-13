@@ -176,7 +176,6 @@ const App: React.FC = () => {
           setOutputText(result);
           setEditableLatex(result);
           setIsArtifactOpen(true);
-          setActiveArtifactTab('code');
           setError(null);
           return;
         } catch (error) {
@@ -234,16 +233,16 @@ const App: React.FC = () => {
   const disableGenerate = isLoading || !inputText.trim();
 
   const mainPanelStyle: React.CSSProperties = {
-    flexBasis: isCanvasVisible ? '38%' : '100%',
-    maxWidth: isCanvasVisible ? '38%' : '100%',
-    transform: isCanvasVisible ? 'translateX(-36px)' : 'translateX(0)',
+    flexBasis: isCanvasVisible ? '34%' : '100%',
+    maxWidth: isCanvasVisible ? '34%' : '100%',
+    marginRight: isCanvasVisible ? '8px' : '0',
   };
 
   const canvasPanelStyle: React.CSSProperties = {
-    flexBasis: isCanvasVisible ? '62%' : '0%',
-    maxWidth: isCanvasVisible ? '62%' : '0%',
+    flexBasis: isCanvasVisible ? '66%' : '0%',
+    maxWidth: isCanvasVisible ? '66%' : '0%',
     opacity: isCanvasVisible ? 1 : 0,
-    transform: isCanvasVisible ? 'translateX(12px)' : 'translateX(60px)',
+    transform: isCanvasVisible ? 'translateX(0)' : 'translateX(60px)',
     pointerEvents: isCanvasVisible ? 'auto' : 'none',
   };
 
@@ -287,7 +286,11 @@ const App: React.FC = () => {
           </p>
         </header>
 
-        <div className="flex flex-col gap-6 lg:flex-row">
+        <div
+          className={`flex flex-col ${isCanvasVisible ? 'gap-4' : 'gap-6'} lg:flex-row ${
+            isCanvasVisible ? 'lg:gap-2' : 'lg:gap-6'
+          }`}
+        >
           <main
             className="surface-card rounded-3xl shadow-sm p-6 sm:p-8 transition-all duration-500 ease-out"
             style={mainPanelStyle}
@@ -487,7 +490,7 @@ const App: React.FC = () => {
                     <textarea
                       value={editableLatex}
                       onChange={(e) => setEditableLatex(e.target.value)}
-                      className="input-field w-full h-full p-4 rounded-2xl font-mono text-sm resize-none focus:ring-2 focus:ring-[#c15f3c] focus:border-[#c15f3c] outline-none transition"
+                      className="input-field flex-1 w-full h-full min-h-[420px] p-4 rounded-2xl font-mono text-sm resize-none focus:ring-2 focus:ring-[#c15f3c] focus:border-[#c15f3c] outline-none transition"
                       spellCheck="false"
                     />
                   ) : (
