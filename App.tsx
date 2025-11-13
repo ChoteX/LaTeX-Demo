@@ -161,14 +161,6 @@ const App: React.FC = () => {
             placeholder={DEFAULT_LATEX_SAMPLE}
           />
 
-          <div className="mt-6">
-            <LatexPreview
-              latex={inputText}
-              title="Input Preview"
-              emptyMessage="Paste or type LaTeX above to see a live rendering."
-              height={420}
-            />
-          </div>
           
           <div className="mt-8 p-6 bg-gray-900/50 rounded-lg border border-gray-700">
             <h3 className="text-xl font-semibold text-gray-200 mb-6 text-center">Generation Options</h3>
