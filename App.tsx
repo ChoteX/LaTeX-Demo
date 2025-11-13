@@ -3,8 +3,8 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { generateTestSamples } from './services/geminiService';
 import LatexInput from './components/LatexInput';
 import Button from './components/Button';
-import Loader from './components/Loader';
 import LatexPreview from './components/LatexPreview';
+import './styles/app.css';
 
 const FRIENDLY_RETRY_MESSAGES: Record<string, string> = {
   georgian: 'გენერატორი ახლა გადატვირთულია. გთხოვთ სცადოთ კვლავ დაახლოებით ერთ წუთში.',
@@ -12,6 +12,7 @@ const FRIENDLY_RETRY_MESSAGES: Record<string, string> = {
   portuguese: 'O gerador está ocupado no momento. Tente novamente em cerca de um minuto.',
   ukrainian: 'Генератор зараз зайнятий. Спробуйте ще раз приблизно за хвилину.',
 };
+const CLI_SPINNER_FRAMES = ['▘', '▝', '▗', '▖'];
 
 const FRIENDLY_ERROR_PATTERNS = [
   /failed to generate test/i,
@@ -156,6 +157,7 @@ const App: React.FC = () => {
   const [isArtifactOpen, setIsArtifactOpen] = useState<boolean>(false);
   const [activeArtifactTab, setActiveArtifactTab] = useState<'code' | 'preview'>('code');
   const [artifactCopied, setArtifactCopied] = useState<boolean>(false);
+  const [spinnerFrameIndex, setSpinnerFrameIndex] = useState<number>(0);
   
   useEffect(() => {
     if (!outputText) {
@@ -164,6 +166,17 @@ const App: React.FC = () => {
       setArtifactCopied(false);
     }
   }, [outputText]);
+
+  useEffect(() => {
+    if (!isLoading) {
+      setSpinnerFrameIndex(0);
+      return;
+    }
+    const intervalId = window.setInterval(() => {
+      setSpinnerFrameIndex((prev) => (prev + 1) % CLI_SPINNER_FRAMES.length);
+    }, 180);
+    return () => window.clearInterval(intervalId);
+  }, [isLoading]);
 
   const handleGenerate = useCallback(async () => {
     setError(null);
@@ -179,6 +192,8 @@ const App: React.FC = () => {
         setError(getFriendlyRetryMessage(language));
       } else {
         setOutputText(result);
+        setIsArtifactOpen(true);
+        setActiveArtifactTab('code');
       }
     } catch (e: unknown) {
       const errorMessage = e instanceof Error ? e.message : 'An unexpected error occurred.';
@@ -209,6 +224,14 @@ const App: React.FC = () => {
     setTimeout(() => setArtifactCopied(false), 2000);
   };
 
+  const mainPanelClasses = [
+    'bg-white border border-[#e6e0d4] rounded-3xl shadow-sm p-6 sm:p-8 flex-1 transition-all duration-500 ease-out',
+    isArtifactOpen ? 'lg:w-2/3 lg:-translate-x-4' : ''
+  ]
+    .join(' ')
+    .trim();
+  const spinnerFrame = CLI_SPINNER_FRAMES[spinnerFrameIndex];
+
   return (
     <div className="min-h-screen bg-[#f4f3ee] text-[#2f2e2a] font-sans">
       <div className="w-full max-w-6xl mx-auto px-4 py-8 sm:py-10">
@@ -220,12 +243,8 @@ const App: React.FC = () => {
           </p>
         </header>
 
-        <div className={`flex flex-col gap-6 ${isArtifactOpen ? 'lg:flex-row' : ''}`}>
-          <main
-            className={`bg-white border border-[#e6e0d4] rounded-3xl shadow-sm p-6 sm:p-8 flex-1 ${
-              isArtifactOpen ? 'lg:w-2/3' : ''
-            }`}
-          >
+        <div className={`flex flex-col gap-6 ${isArtifactOpen ? 'lg:flex-row lg:items-start' : ''}`}>
+          <main className={mainPanelClasses}>
             <LatexInput
               value={inputText}
               onChange={setInputText}
@@ -309,9 +328,9 @@ const App: React.FC = () => {
             <div className="mt-8 text-center">
               <Button onClick={handleGenerate} disabled={isLoading || !inputText.trim()}>
                 {isLoading ? (
-                  <div className="flex items-center justify-center gap-2">
-                    <Loader />
-                    <span>Generating...</span>
+                  <div className="flex items-center justify-center gap-3 font-mono text-base tracking-[0.2em]">
+                    <span className="text-xl">{spinnerFrame}</span>
+                    <span className="tracking-normal font-sans">Generating…</span>
                   </div>
                 ) : (
                   'Generate Test'
@@ -332,9 +351,9 @@ const App: React.FC = () => {
                 className="mt-10 w-full text-left bg-[#f7f3ea] border border-[#e3dac8] rounded-2xl p-5 flex items-center justify-between hover:border-[#c15f3c] transition"
               >
                 <div>
-                  <p className="text-xs uppercase tracking-[0.25em] text-[#b1ada1]">Generated Test</p>
+                  <p className="text-xs uppercase tracking-[0.25em] text-[#b1ada1]">Canvas</p>
                   <p className="text-lg font-semibold text-[#2f2e2a] mt-1">
-                    {isArtifactOpen ? 'Hide artifact panel' : 'Click to open the artifact'}
+                    {isArtifactOpen ? 'Hide canvas view' : 'Click to open the canvas'}
                   </p>
                 </div>
                 <span
@@ -348,51 +367,62 @@ const App: React.FC = () => {
             )}
           </main>
 
-          {isArtifactOpen && outputText && (
-            <aside className="bg-white border border-[#e6e0d4] rounded-3xl shadow-sm w-full lg:w-[26rem] xl:w-[28rem] p-6 space-y-5">
-              <div className="flex items-center justify-between gap-3 flex-wrap">
-                <div className="inline-flex bg-[#f4f3ee] border border-[#dcd6c9] rounded-full p-1">
-                  {(['code', 'preview'] as const).map((tab) => (
-                    <button
-                      key={tab}
-                      type="button"
-                      onClick={() => setActiveArtifactTab(tab)}
-                      className={`px-4 py-1.5 text-sm font-medium rounded-full transition ${
-                        activeArtifactTab === tab
-                          ? 'bg-white text-[#c15f3c] shadow-sm'
-                          : 'text-[#5c5b57]'
-                      }`}
-                    >
-                      {tab === 'code' ? 'Code' : 'Preview'}
-                    </button>
-                  ))}
-                </div>
-                <button
-                  type="button"
-                  onClick={handleCopyArtifact}
-                  className="px-4 py-2 text-sm font-semibold rounded-full bg-[#b1ada1] text-white hover:bg-[#9f9c92] transition"
-                >
-                  {artifactCopied ? 'Copied!' : 'Copy'}
-                </button>
-              </div>
-
-              <div className="border border-[#eee7dc] rounded-2xl bg-[#faf8f3] h-[480px] overflow-hidden">
-                {activeArtifactTab === 'code' ? (
-                  <pre className="h-full overflow-auto p-4 text-sm leading-relaxed text-[#2f2e2a] font-mono whitespace-pre-wrap">
-                    <code>{outputText}</code>
-                  </pre>
-                ) : (
-                  <div className="h-full overflow-auto p-4">
-                    <LatexPreview
-                      latex={outputText}
-                      title="Generated Preview"
-                      variant="embedded"
-                      height={460}
-                    />
+          {outputText && (
+            <div
+              className={`transition-all duration-500 ease-out w-full ${
+                isArtifactOpen ? 'lg:w-[34rem] xl:w-[38rem]' : 'lg:w-0'
+              }`}
+            >
+              {isArtifactOpen && (
+                <aside className="bg-white border border-[#e6e0d4] rounded-3xl shadow-sm w-full p-6 space-y-5 slide-in-right">
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.35em] text-[#b1ada1] mb-3">Canvas</p>
                   </div>
-                )}
-              </div>
-            </aside>
+                  <div className="flex items-center justify-between gap-3 flex-wrap">
+                    <div className="inline-flex bg-[#f4f3ee] border border-[#dcd6c9] rounded-full p-1">
+                      {(['code', 'preview'] as const).map((tab) => (
+                        <button
+                          key={tab}
+                          type="button"
+                          onClick={() => setActiveArtifactTab(tab)}
+                          className={`px-4 py-1.5 text-sm font-medium rounded-full transition ${
+                            activeArtifactTab === tab
+                              ? 'bg-white text-[#c15f3c] shadow-sm'
+                              : 'text-[#5c5b57]'
+                          }`}
+                        >
+                          {tab === 'code' ? 'Code' : 'Preview'}
+                        </button>
+                      ))}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleCopyArtifact}
+                      className="px-4 py-2 text-sm font-semibold rounded-full bg-[#b1ada1] text-white hover:bg-[#9f9c92] transition"
+                    >
+                      {artifactCopied ? 'Copied!' : 'Copy'}
+                    </button>
+                  </div>
+
+                  <div className="border border-[#eee7dc] rounded-2xl bg-[#faf8f3] h-[520px] overflow-hidden">
+                    {activeArtifactTab === 'code' ? (
+                      <pre className="h-full overflow-auto p-4 text-sm leading-relaxed text-[#2f2e2a] font-mono whitespace-pre-wrap">
+                        <code>{outputText}</code>
+                      </pre>
+                    ) : (
+                      <div className="h-full overflow-auto p-4">
+                        <LatexPreview
+                          latex={outputText}
+                          title="Canvas Preview"
+                          variant="embedded"
+                          height={500}
+                        />
+                      </div>
+                    )}
+                  </div>
+                </aside>
+              )}
+            </div>
           )}
         </div>
 
