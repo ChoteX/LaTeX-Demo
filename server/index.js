@@ -195,6 +195,7 @@ ${choiceLabelLine}`;
        For example:
        ${choiceLabelExample}
        Do not rely on custom environments or enumitem; write them directly as inline text with math in $...$ where needed. If you need additional options, continue with the next letters of the same alphabet.
+    6. Keep every enumerated problem statement on the same line as its number (e.g., "\\item Describe ..."). Do not insert a manual line break before the statement; only add \\\\ once the sentence is complete.
 
     Existing LaTeX Test Script:
     ---

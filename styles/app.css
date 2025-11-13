@@ -152,22 +152,6 @@ body {
   outline-offset: 2px;
 }
 
-.app-loading-overlay {
-  position: fixed;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  background: rgba(244, 243, 238, 0.65);
-  backdrop-filter: blur(4px);
-  z-index: 30;
-}
-
-:root[data-theme='dark'] .app-loading-overlay {
-  background: rgba(31, 27, 23, 0.7);
-}
-
 .no-spinner::-webkit-outer-spin-button,
 .no-spinner::-webkit-inner-spin-button {
   -webkit-appearance: none;

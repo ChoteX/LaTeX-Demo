@@ -93,6 +93,8 @@ a) $\frac{5}{8}$ \quad b) $\frac{1}{4}$ \quad c) $\frac{5}{16}$ \quad d) $\frac{
 \end{document}
 `;
 
+const DEFAULT_EXERCISE_COUNT = 10;
+
 const App: React.FC = () => {
   const [inputText, setInputText] = useState<string>(DEFAULT_LATEX_SAMPLE);
   const [outputText, setOutputText] = useState<string>('');
@@ -100,7 +102,8 @@ const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [numExercises, setNumExercises] = useState<number>(10);
+  const [numExercises, setNumExercises] = useState<number>(DEFAULT_EXERCISE_COUNT);
+  const [numExercisesInput, setNumExercisesInput] = useState<string>(String(DEFAULT_EXERCISE_COUNT));
   const [difficulty, setDifficulty] = useState<string>('medium');
   const [language, setLanguage] = useState<string>('Georgian');
   const [isArtifactOpen, setIsArtifactOpen] = useState<boolean>(false);
@@ -226,6 +229,29 @@ const App: React.FC = () => {
     URL.revokeObjectURL(link.href);
   };
 
+  const handleNumExercisesChange = (value: string) => {
+    setNumExercisesInput(value);
+    if (!value.trim()) {
+      return;
+    }
+    const parsed = Number(value);
+    if (Number.isNaN(parsed)) {
+      return;
+    }
+    const clamped = Math.min(30, Math.max(1, parsed));
+    setNumExercises(clamped);
+    if (clamped !== parsed || value !== String(clamped)) {
+      setNumExercisesInput(String(clamped));
+    }
+  };
+
+  const handleNumExercisesBlur = () => {
+    if (!numExercisesInput.trim()) {
+      setNumExercisesInput(String(DEFAULT_EXERCISE_COUNT));
+      setNumExercises(DEFAULT_EXERCISE_COUNT);
+    }
+  };
+
   const handleEditToggle = () => {
     setIsEditingCanvas((prev) => !prev);
   };
@@ -331,11 +357,9 @@ const App: React.FC = () => {
                   <input
                     type="number"
                     id="num-exercises"
-                    value={numExercises}
-                    onChange={(e) => {
-                      const val = e.target.value === '' ? 1 : parseInt(e.target.value, 10);
-                      setNumExercises(Math.max(1, Math.min(30, val || 1)));
-                    }}
+                    value={numExercisesInput}
+                    onChange={(e) => handleNumExercisesChange(e.target.value)}
+                    onBlur={handleNumExercisesBlur}
                     min="1"
                     max="30"
                     className="input-field w-full rounded-xl p-2.5 focus:ring-2 focus:ring-[#c15f3c] focus:border-[#c15f3c] outline-none transition no-spinner"
@@ -406,9 +430,7 @@ const App: React.FC = () => {
               <Button onClick={handleGenerate} disabled={disableGenerate}>
                 {isLoading ? (
                   <div className="flex items-center justify-center gap-3">
-                    <span style={{ color: '#fff' }}>
-                      <CliSpinner />
-                    </span>
+                    <CliSpinner color="#fff" />
                     <span className="font-semibold tracking-wide">Generating…</span>
                   </div>
                 ) : (

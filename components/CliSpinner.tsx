@@ -1,10 +1,14 @@
 import React from 'react';
 
-const CliSpinner: React.FC = () => (
+interface CliSpinnerProps {
+  color?: string;
+}
+
+const CliSpinner: React.FC<CliSpinnerProps> = ({ color }) => (
   <span
     className="cli-spinner"
     aria-hidden="true"
-    style={{ color: 'var(--spinner-color, var(--color-accent))' }}
+    style={{ color: color ?? 'var(--spinner-color, var(--color-accent))' }}
   >
     {Array.from({ length: 9 }).map((_, index) => {
       if (index === 4) {
