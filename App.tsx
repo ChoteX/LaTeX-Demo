@@ -179,18 +179,18 @@ const App: React.FC = () => {
   }, [inputText, numExercises, difficulty, language]);
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white font-sans flex flex-col items-center p-4 sm:p-6 md:p-8">
+    <div className="min-h-screen bg-[#05060F] text-[#F5F5FF] font-sans flex flex-col items-center p-4 sm:p-6 md:p-10">
       <div className="w-full max-w-4xl mx-auto">
-        <header className="text-center mb-8">
-          <h1 className="text-4xl sm:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500">
+        <header className="text-center mb-10">
+          <h1 className="text-4xl sm:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#FFB547] via-[#FF7F6A] to-[#F15483]">
             Math Test Generator
           </h1>
-          <p className="mt-4 text-lg text-gray-400">
+          <p className="mt-4 text-lg text-[#C3C7F5]">
             Generate new LaTeX math problems based on your existing test script with customizable options.
           </p>
         </header>
 
-        <main className="bg-gray-800 p-6 sm:p-8 rounded-xl shadow-2xl border border-gray-700">
+        <main className="bg-[#0F1424]/90 backdrop-blur-xl p-6 sm:p-8 rounded-2xl shadow-2xl border border-[#2F3250]">
           <LatexInput
             value={inputText}
             onChange={setInputText}
@@ -198,11 +198,11 @@ const App: React.FC = () => {
           />
 
           
-          <div className="mt-8 p-6 bg-gray-900/50 rounded-lg border border-gray-700">
-            <h3 className="text-xl font-semibold text-gray-200 mb-6 text-center">Generation Options</h3>
+          <div className="mt-8 p-6 bg-[#131833]/80 rounded-2xl border border-[#2F3250]">
+            <h3 className="text-xl font-semibold text-[#FDDDC9] mb-6 text-center">Generation Options</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>
-                <label htmlFor="num-exercises" className="block text-sm font-medium text-gray-400 mb-2">Number of Exercises</label>
+                <label htmlFor="num-exercises" className="block text-sm font-medium text-[#F3BFA6] mb-2">Number of Exercises</label>
                 <input
                   type="number"
                   id="num-exercises"
@@ -213,46 +213,46 @@ const App: React.FC = () => {
                   }}
                   min="1"
                   max="30"
-                  className="w-full bg-gray-700 border border-gray-600 rounded-lg p-2.5 text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                  className="w-full bg-[#0C0F23] border border-[#2E2F4F] rounded-xl p-2.5 text-[#F5F5FF] focus:ring-2 focus:ring-[#FF8F70] focus:border-[#FFB547] outline-none transition"
                   aria-describedby="num-exercises-description"
                 />
-                <p className="text-xs text-gray-500 mt-1" id="num-exercises-description">Max: 30</p>
+                <p className="text-xs text-[#B2B7E6] mt-1" id="num-exercises-description">Max: 30</p>
               </div>
 
               <div>
-                <label htmlFor="difficulty" className="block text-sm font-medium text-gray-400 mb-2">Difficulty</label>
+                <label htmlFor="difficulty" className="block text-sm font-medium text-[#F3BFA6] mb-2">Difficulty</label>
                 <div className="relative">
                   <select
                     id="difficulty"
                     value={difficulty}
                     onChange={(e) => setDifficulty(e.target.value)}
-                    className="w-full bg-gray-700 border border-gray-600 rounded-lg p-2.5 text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none appearance-none pr-8"
+                    className="w-full bg-[#0C0F23] border border-[#2E2F4F] rounded-xl p-2.5 text-[#F5F5FF] focus:ring-2 focus:ring-[#FF8F70] focus:border-[#FFB547] outline-none appearance-none pr-8 transition"
                   >
                     <option value="easier">Easier</option>
                     <option value="medium">Medium (Similar)</option>
                     <option value="harder">Harder</option>
                   </select>
-                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-400">
+                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-[#FFB547]">
                     <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
                   </div>
                 </div>
               </div>
               
               <div>
-                <label htmlFor="language" className="block text-sm font-medium text-gray-400 mb-2">Language</label>
+                <label htmlFor="language" className="block text-sm font-medium text-[#F3BFA6] mb-2">Language</label>
                 <div className="relative">
                   <select
                     id="language"
                     value={language}
                     onChange={(e) => setLanguage(e.target.value)}
-                    className="w-full bg-gray-700 border border-gray-600 rounded-lg p-2.5 text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none appearance-none pr-8"
+                    className="w-full bg-[#0C0F23] border border-[#2E2F4F] rounded-xl p-2.5 text-[#F5F5FF] focus:ring-2 focus:ring-[#FF8F70] focus:border-[#FFB547] outline-none appearance-none pr-8 transition"
                   >
                     <option value="Georgian">Georgian</option>
                     <option value="English">English</option>
                     <option value="Portuguese">Portuguese</option>
                     <option value="Ukrainian">Ukrainian</option>
                   </select>
-                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-400">
+                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-[#FFB547]">
                     <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
                   </div>
                 </div>
@@ -277,7 +277,7 @@ const App: React.FC = () => {
           </div>
 
           {error && (
-            <div className="mt-6 p-4 bg-red-900 border border-red-700 text-red-200 rounded-lg text-center">
+            <div className="mt-6 p-4 bg-[#32111F] border border-[#FF7C6E]/70 text-[#FFC9D5] rounded-xl text-center">
               {error}
             </div>
           )}
@@ -285,11 +285,11 @@ const App: React.FC = () => {
           {(outputText || isLoading) && (
             <div className="mt-8 space-y-6">
               {isLoading && !outputText ? (
-                <div className="w-full h-96 p-4 bg-gray-900 border border-gray-700 rounded-lg flex items-center justify-center">
+                <div className="w-full h-96 p-4 bg-[#151932] border border-[#2F3250] rounded-2xl flex items-center justify-center">
                   <div className="text-center">
                     <Loader />
-                    <p className="mt-4 text-gray-400">Generating your new LaTeX script...</p>
-                    <p className="text-sm text-gray-500">This might take a moment.</p>
+                    <p className="mt-4 text-[#C3C7F5]">Generating your new LaTeX script...</p>
+                    <p className="text-sm text-[#9AA1DB]">This might take a moment.</p>
                   </div>
                 </div>
               ) : (
@@ -306,7 +306,7 @@ const App: React.FC = () => {
             </div>
           )}
         </main>
-        <footer className="text-center mt-8 text-gray-500 text-sm">
+        <footer className="text-center mt-8 text-[#8B90C9] text-sm">
           <p>© {new Date().getFullYear()} ExpoV. All rights reserved.</p>
         </footer>
       </div>

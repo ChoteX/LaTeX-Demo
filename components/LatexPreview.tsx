@@ -102,11 +102,11 @@ const LatexPreview: React.FC<LatexPreviewProps> = ({
   const showPlaceholder = !latex.trim();
 
   return (
-    <section className="latex-preview bg-gray-900/60 border border-gray-700 rounded-xl p-4">
+    <section className="latex-preview bg-[#0F1424]/80 border border-[#2F3250] rounded-2xl p-4">
       <div className="flex items-center justify-between gap-4 mb-3">
         <div>
-          <h3 className="text-lg font-semibold text-gray-200">{title}</h3>
-          <p className="text-xs text-gray-500">
+          <h3 className="text-lg font-semibold text-[#FDDDC9]">{title}</h3>
+          <p className="text-xs text-[#9DA3DC]">
             Rendered locally. Complex packages may not be fully supported.
           </p>
         </div>
@@ -117,20 +117,20 @@ const LatexPreview: React.FC<LatexPreviewProps> = ({
         style={{ minHeight: `${height / 2}px`, maxHeight: `${height}px` }}
       >
         {isLoading && (
-          <div className="flex items-center justify-center h-full py-10 text-gray-500">
+          <div className="flex items-center justify-center h-full py-10 text-[#7B82C9]">
             <Loader />
             <span className="ml-3">Preparing preview…</span>
           </div>
         )}
 
         {!isLoading && showPlaceholder && (
-          <div className="h-full flex items-center justify-center text-center text-sm text-gray-500 px-6 py-12">
+          <div className="h-full flex items-center justify-center text-center text-sm text-[#7B82C9] px-6 py-12">
             {emptyMessage}
           </div>
         )}
 
         {!isLoading && !showPlaceholder && error && (
-          <div className="p-4 text-sm text-red-500">
+          <div className="p-4 text-sm text-[#D86586]">
             <p className="font-medium mb-1">Preview unavailable</p>
             <p>{error}</p>
           </div>
