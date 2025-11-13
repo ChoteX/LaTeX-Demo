@@ -82,13 +82,16 @@ const LatexInput: React.FC<LatexInputProps> = ({ value, onChange, placeholder })
   return (
     <div className="w-full">
       <div className="flex items-center justify-between mb-2 gap-3">
-        <label
-          htmlFor="latex-input"
-          className="block text-lg font-medium"
-          style={{ color: 'var(--color-text-primary)' }}
-        >
-          Paste Existing LaTeX Script
-        </label>
+        <div className="flex flex-col">
+          <label
+            htmlFor="latex-input"
+            className="block text-lg font-medium"
+            style={{ color: 'var(--color-text-primary)' }}
+          >
+            Paste Existing LaTeX Script
+          </label>
+          <span className="text-xs italic text-muted">Leave the default prompt for quick results!</span>
+        </div>
         <button
           type="button"
           onClick={handlePaperclipClick}

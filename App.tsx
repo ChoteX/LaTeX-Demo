@@ -249,14 +249,6 @@ const App: React.FC = () => {
   return (
     <div className="min-h-screen font-sans" style={{ backgroundColor: 'var(--color-bg)' }}>
       <div className="w-full max-w-6xl mx-auto px-4 py-8 sm:py-10">
-        {isLoading && (
-          <div className="app-loading-overlay" role="status" aria-live="polite">
-            <CliSpinner />
-            <p className="mt-4 text-sm tracking-wide uppercase" style={{ color: 'var(--color-text-primary)' }}>
-              Generating output…
-            </p>
-          </div>
-        )}
         <div className="flex justify-end mb-4 relative z-10">
           <button
             type="button"
@@ -282,7 +274,7 @@ const App: React.FC = () => {
             Math Test Generator
           </h1>
           <p className="mt-3 text-lg text-muted">
-            Generate fresh LaTeX math problems styled exactly like your original script.
+            Generate LaTeX math problems styled exactly like your original script.
           </p>
         </header>
 
@@ -346,8 +338,9 @@ const App: React.FC = () => {
                     }}
                     min="1"
                     max="30"
-                    className="input-field w-full rounded-xl p-2.5 focus:ring-2 focus:ring-[#c15f3c] focus:border-[#c15f3c] outline-none transition"
+                    className="input-field w-full rounded-xl p-2.5 focus:ring-2 focus:ring-[#c15f3c] focus:border-[#c15f3c] outline-none transition no-spinner"
                     aria-describedby="num-exercises-description"
+                    inputMode="numeric"
                   />
                   <p className="text-xs text-muted mt-1" id="num-exercises-description">
                     Max: 30
