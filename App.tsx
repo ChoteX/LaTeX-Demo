@@ -12,7 +12,7 @@ const FRIENDLY_RETRY_MESSAGES: Record<string, string> = {
   portuguese: 'O gerador está ocupado no momento. Tente novamente em cerca de um minuto.',
   ukrainian: 'Генератор зараз зайнятий. Спробуйте ще раз приблизно за хвилину.',
 };
-const CLI_SPINNER_FRAMES = ['▘', '▝', '▗', '▖'];
+const CLI_SPINNER_FRAMES = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧'];
 
 const FRIENDLY_ERROR_PATTERNS = [
   /failed to generate test/i,
@@ -391,7 +391,7 @@ const App: React.FC = () => {
                               : 'text-[#5c5b57]'
                           }`}
                         >
-                          {tab === 'code' ? 'Code' : 'Preview'}
+                          {tab === 'code' ? 'LaTeX' : 'Preview'}
                         </button>
                       ))}
                     </div>
