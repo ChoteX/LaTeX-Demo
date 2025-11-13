@@ -19,12 +19,12 @@ const LatexOutput: React.FC<LatexOutputProps> = ({ latexScript }) => {
   return (
     <div className="w-full">
       <div className="flex justify-between items-center mb-3">
-        <h2 className="text-lg font-semibold text-[#FDDDC9]">Generated LaTeX Script</h2>
+        <h2 className="text-lg font-semibold text-[#2f2e2a]">Generated LaTeX Script</h2>
         <Button onClick={handleCopy} variant="secondary" disabled={!latexScript}>
           {copied ? 'Copied!' : 'Copy to Clipboard'}
         </Button>
       </div>
-      <div className="w-full h-96 p-4 bg-[#0B0E1F] border border-[#2F3250] rounded-2xl text-[#E4E7FF] font-mono text-sm overflow-auto">
+      <div className="w-full h-96 p-4 bg-[#fdfbf5] border border-[#d8d2c4] rounded-2xl text-[#2f2e2a] font-mono text-sm overflow-auto">
         <pre>
           <code>{latexScript}</code>
         </pre>

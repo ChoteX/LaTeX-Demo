@@ -1,10 +1,9 @@
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { generateTestSamples } from './services/geminiService';
 import LatexInput from './components/LatexInput';
 import Button from './components/Button';
 import Loader from './components/Loader';
-import LatexOutput from './components/LatexOutput';
 import LatexPreview from './components/LatexPreview';
 
 const FRIENDLY_RETRY_MESSAGES: Record<string, string> = {
@@ -154,11 +153,25 @@ const App: React.FC = () => {
   const [numExercises, setNumExercises] = useState<number>(10);
   const [difficulty, setDifficulty] = useState<string>('medium');
   const [language, setLanguage] = useState<string>('Georgian');
+  const [isArtifactOpen, setIsArtifactOpen] = useState<boolean>(false);
+  const [activeArtifactTab, setActiveArtifactTab] = useState<'code' | 'preview'>('code');
+  const [artifactCopied, setArtifactCopied] = useState<boolean>(false);
+  
+  useEffect(() => {
+    if (!outputText) {
+      setIsArtifactOpen(false);
+      setActiveArtifactTab('code');
+      setArtifactCopied(false);
+    }
+  }, [outputText]);
 
   const handleGenerate = useCallback(async () => {
     setError(null);
     setIsLoading(true);
     setOutputText('');
+    setIsArtifactOpen(false);
+    setActiveArtifactTab('code');
+    setArtifactCopied(false);
 
     try {
       const result = await generateTestSamples(inputText, numExercises, difficulty, language);
@@ -178,135 +191,212 @@ const App: React.FC = () => {
     }
   }, [inputText, numExercises, difficulty, language]);
 
+  const handleArtifactCardClick = () => {
+    if (!outputText) return;
+    setIsArtifactOpen((prev) => {
+      const next = !prev;
+      if (next) {
+        setActiveArtifactTab('code');
+      }
+      return next;
+    });
+  };
+
+  const handleCopyArtifact = () => {
+    if (!outputText) return;
+    navigator.clipboard.writeText(outputText);
+    setArtifactCopied(true);
+    setTimeout(() => setArtifactCopied(false), 2000);
+  };
+
   return (
-    <div className="min-h-screen bg-[#05060F] text-[#F5F5FF] font-sans flex flex-col items-center p-4 sm:p-6 md:p-10">
-      <div className="w-full max-w-4xl mx-auto">
+    <div className="min-h-screen bg-[#f4f3ee] text-[#2f2e2a] font-sans">
+      <div className="w-full max-w-6xl mx-auto px-4 py-8 sm:py-10">
         <header className="text-center mb-10">
-          <h1 className="text-4xl sm:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#FFB547] via-[#FF7F6A] to-[#F15483]">
-            Math Test Generator
-          </h1>
-          <p className="mt-4 text-lg text-[#C3C7F5]">
-            Generate new LaTeX math problems based on your existing test script with customizable options.
+          <p className="text-sm uppercase tracking-[0.3em] text-[#b1ada1]">ExpoV</p>
+          <h1 className="text-4xl sm:text-5xl font-bold text-[#2f2e2a] mt-2">Math Test Generator</h1>
+          <p className="mt-3 text-lg text-[#5c5b57]">
+            Generate fresh LaTeX math problems styled exactly like your original script.
           </p>
         </header>
 
-        <main className="bg-[#0F1424]/90 backdrop-blur-xl p-6 sm:p-8 rounded-2xl shadow-2xl border border-[#2F3250]">
-          <LatexInput
-            value={inputText}
-            onChange={setInputText}
-            placeholder={DEFAULT_LATEX_SAMPLE}
-          />
+        <div className={`flex flex-col gap-6 ${isArtifactOpen ? 'lg:flex-row' : ''}`}>
+          <main
+            className={`bg-white border border-[#e6e0d4] rounded-3xl shadow-sm p-6 sm:p-8 flex-1 ${
+              isArtifactOpen ? 'lg:w-2/3' : ''
+            }`}
+          >
+            <LatexInput
+              value={inputText}
+              onChange={setInputText}
+              placeholder={DEFAULT_LATEX_SAMPLE}
+            />
 
-          
-          <div className="mt-8 p-6 bg-[#131833]/80 rounded-2xl border border-[#2F3250]">
-            <h3 className="text-xl font-semibold text-[#FDDDC9] mb-6 text-center">Generation Options</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div>
-                <label htmlFor="num-exercises" className="block text-sm font-medium text-[#F3BFA6] mb-2">Number of Exercises</label>
-                <input
-                  type="number"
-                  id="num-exercises"
-                  value={numExercises}
-                  onChange={(e) => {
-                    const val = e.target.value === '' ? 1 : parseInt(e.target.value, 10);
-                    setNumExercises(Math.max(1, Math.min(30, val || 1)));
-                  }}
-                  min="1"
-                  max="30"
-                  className="w-full bg-[#0C0F23] border border-[#2E2F4F] rounded-xl p-2.5 text-[#F5F5FF] focus:ring-2 focus:ring-[#FF8F70] focus:border-[#FFB547] outline-none transition"
-                  aria-describedby="num-exercises-description"
-                />
-                <p className="text-xs text-[#B2B7E6] mt-1" id="num-exercises-description">Max: 30</p>
-              </div>
+            <div className="mt-8 p-6 bg-[#f9f6f0] rounded-2xl border border-[#ebe4d6]">
+              <h3 className="text-xl font-semibold text-[#2f2e2a] mb-6 text-center">Generation Options</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                  <label htmlFor="num-exercises" className="block text-sm font-medium text-[#5c5b57] mb-2">
+                    Number of Exercises
+                  </label>
+                  <input
+                    type="number"
+                    id="num-exercises"
+                    value={numExercises}
+                    onChange={(e) => {
+                      const val = e.target.value === '' ? 1 : parseInt(e.target.value, 10);
+                      setNumExercises(Math.max(1, Math.min(30, val || 1)));
+                    }}
+                    min="1"
+                    max="30"
+                    className="w-full bg-white border border-[#d8d2c4] rounded-xl p-2.5 text-[#2f2e2a] focus:ring-2 focus:ring-[#c15f3c] focus:border-[#c15f3c] outline-none transition"
+                    aria-describedby="num-exercises-description"
+                  />
+                  <p className="text-xs text-[#8a867c] mt-1" id="num-exercises-description">
+                    Max: 30
+                  </p>
+                </div>
 
-              <div>
-                <label htmlFor="difficulty" className="block text-sm font-medium text-[#F3BFA6] mb-2">Difficulty</label>
-                <div className="relative">
-                  <select
-                    id="difficulty"
-                    value={difficulty}
-                    onChange={(e) => setDifficulty(e.target.value)}
-                    className="w-full bg-[#0C0F23] border border-[#2E2F4F] rounded-xl p-2.5 text-[#F5F5FF] focus:ring-2 focus:ring-[#FF8F70] focus:border-[#FFB547] outline-none appearance-none pr-8 transition"
-                  >
-                    <option value="easier">Easier</option>
-                    <option value="medium">Medium (Similar)</option>
-                    <option value="harder">Harder</option>
-                  </select>
-                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-[#FFB547]">
-                    <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+                <div>
+                  <label htmlFor="difficulty" className="block text-sm font-medium text-[#5c5b57] mb-2">
+                    Difficulty
+                  </label>
+                  <div className="relative">
+                    <select
+                      id="difficulty"
+                      value={difficulty}
+                      onChange={(e) => setDifficulty(e.target.value)}
+                      className="w-full bg-white border border-[#d8d2c4] rounded-xl p-2.5 text-[#2f2e2a] focus:ring-2 focus:ring-[#c15f3c] focus:border-[#c15f3c] outline-none appearance-none pr-8 transition"
+                    >
+                      <option value="easier">Easier</option>
+                      <option value="medium">Medium (Similar)</option>
+                      <option value="harder">Harder</option>
+                    </select>
+                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-[#b1ada1]">
+                      <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                        <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
+                      </svg>
+                    </div>
                   </div>
                 </div>
-              </div>
-              
-              <div>
-                <label htmlFor="language" className="block text-sm font-medium text-[#F3BFA6] mb-2">Language</label>
-                <div className="relative">
-                  <select
-                    id="language"
-                    value={language}
-                    onChange={(e) => setLanguage(e.target.value)}
-                    className="w-full bg-[#0C0F23] border border-[#2E2F4F] rounded-xl p-2.5 text-[#F5F5FF] focus:ring-2 focus:ring-[#FF8F70] focus:border-[#FFB547] outline-none appearance-none pr-8 transition"
-                  >
-                    <option value="Georgian">Georgian</option>
-                    <option value="English">English</option>
-                    <option value="Portuguese">Portuguese</option>
-                    <option value="Ukrainian">Ukrainian</option>
-                  </select>
-                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-[#FFB547]">
-                    <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+                
+                <div>
+                  <label htmlFor="language" className="block text-sm font-medium text-[#5c5b57] mb-2">
+                    Language
+                  </label>
+                  <div className="relative">
+                    <select
+                      id="language"
+                      value={language}
+                      onChange={(e) => setLanguage(e.target.value)}
+                      className="w-full bg-white border border-[#d8d2c4] rounded-xl p-2.5 text-[#2f2e2a] focus:ring-2 focus:ring-[#c15f3c] focus:border-[#c15f3c] outline-none appearance-none pr-8 transition"
+                    >
+                      <option value="Georgian">Georgian</option>
+                      <option value="English">English</option>
+                      <option value="Portuguese">Portuguese</option>
+                      <option value="Ukrainian">Ukrainian</option>
+                    </select>
+                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-[#b1ada1]">
+                      <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                        <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
+                      </svg>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          <div className="mt-8 text-center">
-            <Button
-              onClick={handleGenerate}
-              disabled={isLoading || !inputText.trim()}
-            >
-              {isLoading ? (
-                <div className="flex items-center justify-center">
-                  <Loader />
-                  <span className="ml-2">Generating...</span>
-                </div>
-              ) : (
-                'Generate New Test'
-              )}
-            </Button>
-          </div>
-
-          {error && (
-            <div className="mt-6 p-4 bg-[#32111F] border border-[#FF7C6E]/70 text-[#FFC9D5] rounded-xl text-center">
-              {error}
-            </div>
-          )}
-
-          {(outputText || isLoading) && (
-            <div className="mt-8 space-y-6">
-              {isLoading && !outputText ? (
-                <div className="w-full h-96 p-4 bg-[#151932] border border-[#2F3250] rounded-2xl flex items-center justify-center">
-                  <div className="text-center">
+            <div className="mt-8 text-center">
+              <Button onClick={handleGenerate} disabled={isLoading || !inputText.trim()}>
+                {isLoading ? (
+                  <div className="flex items-center justify-center gap-2">
                     <Loader />
-                    <p className="mt-4 text-[#C3C7F5]">Generating your new LaTeX script...</p>
-                    <p className="text-sm text-[#9AA1DB]">This might take a moment.</p>
+                    <span>Generating...</span>
                   </div>
-                </div>
-              ) : (
-                <LatexOutput latexScript={outputText} />
-              )}
-
-              <LatexPreview
-                latex={outputText}
-                title="Generated Preview"
-                emptyMessage="Run the generator to see a rendered preview."
-                isLoading={isLoading && !outputText}
-                height={480}
-              />
+                ) : (
+                  'Generate Test'
+                )}
+              </Button>
             </div>
+
+            {error && (
+              <div className="mt-6 p-4 bg-[#fff1ed] border border-[#f4c8b9] text-[#7a2d17] rounded-xl text-center">
+                {error}
+              </div>
+            )}
+
+            {outputText && (
+              <button
+                type="button"
+                onClick={handleArtifactCardClick}
+                className="mt-10 w-full text-left bg-[#f7f3ea] border border-[#e3dac8] rounded-2xl p-5 flex items-center justify-between hover:border-[#c15f3c] transition"
+              >
+                <div>
+                  <p className="text-xs uppercase tracking-[0.25em] text-[#b1ada1]">Generated Test</p>
+                  <p className="text-lg font-semibold text-[#2f2e2a] mt-1">
+                    {isArtifactOpen ? 'Hide artifact panel' : 'Click to open the artifact'}
+                  </p>
+                </div>
+                <span
+                  className={`text-3xl text-[#c15f3c] transition-transform ${
+                    isArtifactOpen ? 'rotate-90' : ''
+                  }`}
+                >
+                  &rsaquo;
+                </span>
+              </button>
+            )}
+          </main>
+
+          {isArtifactOpen && outputText && (
+            <aside className="bg-white border border-[#e6e0d4] rounded-3xl shadow-sm w-full lg:w-[26rem] xl:w-[28rem] p-6 space-y-5">
+              <div className="flex items-center justify-between gap-3 flex-wrap">
+                <div className="inline-flex bg-[#f4f3ee] border border-[#dcd6c9] rounded-full p-1">
+                  {(['code', 'preview'] as const).map((tab) => (
+                    <button
+                      key={tab}
+                      type="button"
+                      onClick={() => setActiveArtifactTab(tab)}
+                      className={`px-4 py-1.5 text-sm font-medium rounded-full transition ${
+                        activeArtifactTab === tab
+                          ? 'bg-white text-[#c15f3c] shadow-sm'
+                          : 'text-[#5c5b57]'
+                      }`}
+                    >
+                      {tab === 'code' ? 'Code' : 'Preview'}
+                    </button>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  onClick={handleCopyArtifact}
+                  className="px-4 py-2 text-sm font-semibold rounded-full bg-[#b1ada1] text-white hover:bg-[#9f9c92] transition"
+                >
+                  {artifactCopied ? 'Copied!' : 'Copy'}
+                </button>
+              </div>
+
+              <div className="border border-[#eee7dc] rounded-2xl bg-[#faf8f3] h-[480px] overflow-hidden">
+                {activeArtifactTab === 'code' ? (
+                  <pre className="h-full overflow-auto p-4 text-sm leading-relaxed text-[#2f2e2a] font-mono whitespace-pre-wrap">
+                    <code>{outputText}</code>
+                  </pre>
+                ) : (
+                  <div className="h-full overflow-auto p-4">
+                    <LatexPreview
+                      latex={outputText}
+                      title="Generated Preview"
+                      variant="embedded"
+                      height={460}
+                    />
+                  </div>
+                )}
+              </div>
+            </aside>
           )}
-        </main>
-        <footer className="text-center mt-8 text-[#8B90C9] text-sm">
+        </div>
+
+        <footer className="text-center mt-10 text-[#8d897f] text-sm">
           <p>© {new Date().getFullYear()} ExpoV. All rights reserved.</p>
         </footer>
       </div>

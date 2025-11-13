@@ -11,6 +11,7 @@ interface LatexPreviewProps {
   emptyMessage?: string;
   isLoading?: boolean;
   height?: number;
+  variant?: 'default' | 'embedded';
 }
 
 const LatexPreview: React.FC<LatexPreviewProps> = ({
@@ -19,6 +20,7 @@ const LatexPreview: React.FC<LatexPreviewProps> = ({
   emptyMessage = 'Add some LaTeX to see the live preview.',
   isLoading = false,
   height = 384,
+  variant = 'default',
 }) => {
   const [error, setError] = useState<string | null>(null);
   const [renderedHtml, setRenderedHtml] = useState<string>('');
@@ -100,48 +102,74 @@ const LatexPreview: React.FC<LatexPreviewProps> = ({
   }, [error, normalizedInput]);
 
   const showPlaceholder = !latex.trim();
+  const shouldShowPlaceholderMessage = showPlaceholder && variant === 'default';
+
+  const renderStageContent = () => {
+    if (isLoading) {
+      return (
+        <div className="flex items-center justify-center h-full py-10 text-[#908a80]">
+          <Loader />
+          <span className="ml-3">Preparing preview…</span>
+        </div>
+      );
+    }
+
+    if (shouldShowPlaceholderMessage) {
+      return (
+        <div className="h-full flex items-center justify-center text-center text-sm text-[#908a80] px-6 py-12">
+          {emptyMessage}
+        </div>
+      );
+    }
+
+    if (!isLoading && !showPlaceholder && error) {
+      return (
+        <div className="p-4 text-sm text-[#b04a2c]">
+          <p className="font-medium mb-1">Preview unavailable</p>
+          <p>{error}</p>
+        </div>
+      );
+    }
+
+    if (!isLoading && !showPlaceholder && !error && renderedHtml) {
+      return (
+        <div
+          className="latex-preview-stage-content px-6 py-5 latex-preview-stage-inner"
+          dangerouslySetInnerHTML={{ __html: renderedHtml }}
+        />
+      );
+    }
+
+    return null;
+  };
+
+  if (variant === 'embedded') {
+    return (
+      <div
+        className="rounded-xl bg-white text-[#2f2e2a] border border-[#e4ddcf] overflow-auto"
+        style={{ minHeight: `${height / 2}px`, maxHeight: `${height}px` }}
+      >
+        {renderStageContent()}
+      </div>
+    );
+  }
 
   return (
-    <section className="latex-preview bg-[#0F1424]/80 border border-[#2F3250] rounded-2xl p-4">
+    <section className="latex-preview bg-white border border-[#e6e0d4] rounded-2xl p-4">
       <div className="flex items-center justify-between gap-4 mb-3">
         <div>
-          <h3 className="text-lg font-semibold text-[#FDDDC9]">{title}</h3>
-          <p className="text-xs text-[#9DA3DC]">
+          <h3 className="text-lg font-semibold text-[#2f2e2a]">{title}</h3>
+          <p className="text-xs text-[#8a867c]">
             Rendered locally. Complex packages may not be fully supported.
           </p>
         </div>
       </div>
 
       <div
-        className="latex-preview-stage bg-white text-gray-900 rounded-lg overflow-auto"
+        className="latex-preview-stage bg-[#fdfbf5] text-[#2f2e2a] rounded-2xl border border-[#ebe4d6] overflow-auto"
         style={{ minHeight: `${height / 2}px`, maxHeight: `${height}px` }}
       >
-        {isLoading && (
-          <div className="flex items-center justify-center h-full py-10 text-[#7B82C9]">
-            <Loader />
-            <span className="ml-3">Preparing preview…</span>
-          </div>
-        )}
-
-        {!isLoading && showPlaceholder && (
-          <div className="h-full flex items-center justify-center text-center text-sm text-[#7B82C9] px-6 py-12">
-            {emptyMessage}
-          </div>
-        )}
-
-        {!isLoading && !showPlaceholder && error && (
-          <div className="p-4 text-sm text-[#D86586]">
-            <p className="font-medium mb-1">Preview unavailable</p>
-            <p>{error}</p>
-          </div>
-        )}
-
-        {!isLoading && !showPlaceholder && !error && renderedHtml && (
-          <div
-            className="latex-preview-stage-content px-6 py-5 latex-preview-stage-inner"
-            dangerouslySetInnerHTML={{ __html: renderedHtml }}
-          />
-        )}
+        {renderStageContent()}
       </div>
     </section>
   );
