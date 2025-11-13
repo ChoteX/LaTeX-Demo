@@ -27,6 +27,10 @@ const FRIENDLY_ERROR_PATTERNS = [
   /429/,
 ];
 
+const CLIENT_RETRYABLE_PATTERNS = [/overloaded/i, /try again later/i, /unavailable/i, /503/, /429/];
+const CLIENT_RETRY_DELAY_MS = 60000;
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
 type ThemeMode = 'light' | 'dark';
 
 const getFriendlyRetryMessage = (language: string): string => {
@@ -225,12 +229,26 @@ const App: React.FC = () => {
     setIsEditingCanvas(false);
 
     try {
-      const result = await generateTestSamples(inputText, numExercises, difficulty, language);
-      setOutputText(result);
-      setEditableLatex(result);
-      setIsArtifactOpen(true);
-      setActiveArtifactTab('code');
-      setError(null);
+      const maxAttempts = 2;
+      for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+        try {
+          const result = await generateTestSamples(inputText, numExercises, difficulty, language);
+          setOutputText(result);
+          setEditableLatex(result);
+          setIsArtifactOpen(true);
+          setActiveArtifactTab('code');
+          setError(null);
+          return;
+        } catch (error) {
+          const message = error instanceof Error ? error.message : String(error);
+          const shouldRetry = CLIENT_RETRYABLE_PATTERNS.some((pattern) => pattern.test(message));
+          if (!shouldRetry || attempt === maxAttempts - 1) {
+            throw error;
+          }
+          setError('Generator is busy. Retrying automatically in 60 seconds…');
+          await sleep(CLIENT_RETRY_DELAY_MS);
+        }
+      }
     } catch (e: unknown) {
       const errorMessage = e instanceof Error ? e.message : 'An unexpected error occurred.';
       const displayMessage = shouldShowFriendlyMessage(errorMessage)
