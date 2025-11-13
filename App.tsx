@@ -7,6 +7,39 @@ import Loader from './components/Loader';
 import LatexOutput from './components/LatexOutput';
 import LatexPreview from './components/LatexPreview';
 
+const FRIENDLY_RETRY_MESSAGES: Record<string, string> = {
+  georgian: 'გენერატორი ახლა გადატვირთულია. გთხოვთ სცადოთ კვლავ დაახლოებით ერთ წუთში.',
+  english: 'The generator is busy right now. Please try again in about a minute.',
+  portuguese: 'O gerador está ocupado no momento. Tente novamente em cerca de um minuto.',
+  ukrainian: 'Генератор зараз зайнятий. Спробуйте ще раз приблизно за хвилину.',
+};
+
+const FRIENDLY_ERROR_PATTERNS = [
+  /failed to generate test/i,
+  /request failed/i,
+  /failed to contact/i,
+  /load failed/i,
+  /network/i,
+  /timeout/i,
+  /unavailable/i,
+  /overload/i,
+  /try again later/i,
+  /503/,
+  /429/,
+];
+
+const getFriendlyRetryMessage = (language: string): string => {
+  const normalized = (language || '').trim().toLowerCase();
+  return FRIENDLY_RETRY_MESSAGES[normalized] || FRIENDLY_RETRY_MESSAGES.english;
+};
+
+const shouldShowFriendlyMessage = (message: string | null | undefined): boolean => {
+  if (!message) {
+    return false;
+  }
+  return FRIENDLY_ERROR_PATTERNS.some((pattern) => pattern.test(message));
+};
+
 const DEFAULT_LATEX_SAMPLE = String.raw`
 \documentclass[12pt,a4paper]{article}
 \usepackage[utf8]{inputenc}
@@ -130,13 +163,16 @@ const App: React.FC = () => {
     try {
       const result = await generateTestSamples(inputText, numExercises, difficulty, language);
       if (result.startsWith('Error:')) {
-        setError(result);
+        setError(getFriendlyRetryMessage(language));
       } else {
         setOutputText(result);
       }
     } catch (e: unknown) {
       const errorMessage = e instanceof Error ? e.message : 'An unexpected error occurred.';
-      setError(`Failed to generate test: ${errorMessage}`);
+      const displayMessage = shouldShowFriendlyMessage(errorMessage)
+        ? getFriendlyRetryMessage(language)
+        : errorMessage;
+      setError(displayMessage);
     } finally {
       setIsLoading(false);
     }

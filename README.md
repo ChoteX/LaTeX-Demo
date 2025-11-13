@@ -72,6 +72,8 @@ GitHub Action `.github/workflows/deploy.yml` already builds and publishes `dist/
 |                             | `MAX_EXERCISES`     | Optional clamp for exercises (default `30`). |
 |                             | `GEMINI_MAX_RETRIES` | Optional retry count for overloaded Gemini responses (default `3`). |
 |                             | `GEMINI_RETRY_BASE_DELAY_MS` | Optional base delay (in ms) for exponential backoff between Gemini retries (default `1000`). |
+|                             | `GEMINI_MAX_REQUESTS_PER_MINUTE` | Hard cap for Gemini calls per interval (default `2` per `60000` ms). |
+|                             | `GEMINI_REQUEST_INTERVAL_MS` | Interval window (ms) used with the cap above (default `60000`). |
 | Frontend `.env` / GitHub var| `VITE_API_BASE_URL` | Base URL of the Render service; safe to share publicly. |
 | Frontend `.env` (optional)  | `VITE_REQUEST_TIMEOUT_MS` | Override request timeout (default `120000`). |
 

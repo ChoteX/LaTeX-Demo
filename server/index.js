@@ -31,6 +31,8 @@ const CHOICE_LABELS_BY_LANGUAGE = {
 };
 const MAX_MODEL_RETRIES = Math.max(1, Number(process.env.GEMINI_MAX_RETRIES || 3));
 const BASE_RETRY_DELAY_MS = Math.max(250, Number(process.env.GEMINI_RETRY_BASE_DELAY_MS || 1000));
+const MAX_REQUESTS_PER_INTERVAL = Math.max(1, Number(process.env.GEMINI_MAX_REQUESTS_PER_MINUTE || 2));
+const REQUEST_INTERVAL_MS = Math.max(1000, Number(process.env.GEMINI_REQUEST_INTERVAL_MS || 60000));
 
 const resolveChoiceLabelConfig = (language) => {
   if (!language || typeof language !== 'string') {
@@ -60,6 +62,23 @@ const allowedOrigins = (process.env.ALLOWED_ORIGINS || '')
   .filter(Boolean);
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+let requestTimestamps = [];
+const waitForRateLimitSlot = async () => {
+  while (true) {
+    const now = Date.now();
+    requestTimestamps = requestTimestamps.filter((ts) => now - ts < REQUEST_INTERVAL_MS);
+    if (requestTimestamps.length < MAX_REQUESTS_PER_INTERVAL) {
+      requestTimestamps.push(now);
+      return;
+    }
+    const oldest = requestTimestamps[0];
+    const waitMs = Math.max(REQUEST_INTERVAL_MS - (now - oldest), 50);
+    console.warn(
+      `Gemini rate limit reached (${MAX_REQUESTS_PER_INTERVAL}/${REQUEST_INTERVAL_MS}ms). Waiting ${waitMs}ms before next request...`
+    );
+    await sleep(waitMs);
+  }
+};
 const isRetriableModelError = (error) => {
   if (!error) return false;
   const status = typeof error.status === 'number' ? error.status : undefined;
@@ -187,6 +206,7 @@ ${choiceLabelLine}`;
 
   try {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    await waitForRateLimitSlot();
     const sendRequestWithRetry = async () => {
       let lastError;
       for (let attempt = 1; attempt <= MAX_MODEL_RETRIES; attempt += 1) {
