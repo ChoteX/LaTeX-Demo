@@ -7,22 +7,20 @@ import '../styles/latex-preview.css';
 
 interface LatexPreviewProps {
   latex: string;
-  title: string;
+  title?: string;
   emptyMessage?: string;
   isLoading?: boolean;
   height?: number;
   variant?: 'default' | 'embedded';
-  aspectRatio?: string;
 }
 
 const LatexPreview: React.FC<LatexPreviewProps> = ({
   latex,
-  title,
+  title = 'Preview',
   emptyMessage = 'Add some LaTeX to see the live preview.',
   isLoading = false,
   height = 384,
   variant = 'default',
-  aspectRatio = '210 / 297',
 }) => {
   const [error, setError] = useState<string | null>(null);
   const [renderedHtml, setRenderedHtml] = useState<string>('');
@@ -109,26 +107,29 @@ const LatexPreview: React.FC<LatexPreviewProps> = ({
   const renderStageContent = () => {
     if (isLoading) {
       return (
-        <div className="flex items-center justify-center h-full py-10 text-muted">
+        <div className="latex-preview-state">
           <Loader />
-          <span className="ml-3">Preparing preview…</span>
         </div>
       );
     }
 
     if (shouldShowPlaceholderMessage) {
       return (
-        <div className="h-full flex items-center justify-center text-center text-sm text-muted px-6 py-12">
-          {emptyMessage}
+        <div className="latex-preview-state">
+          <p className="text-sm text-muted text-center px-6">{emptyMessage}</p>
         </div>
       );
     }
 
     if (!isLoading && !showPlaceholder && error) {
       return (
-        <div className="p-4 text-sm" style={{ color: '#b04a2c' }}>
-          <p className="font-medium mb-1">Preview unavailable</p>
-          <p>{error}</p>
+        <div className="latex-preview-state">
+          <p className="font-semibold mb-1" style={{ color: '#b04a2c' }}>
+            Preview unavailable
+          </p>
+          <p className="text-sm" style={{ color: '#b04a2c' }}>
+            {error}
+          </p>
         </div>
       );
     }
@@ -136,7 +137,7 @@ const LatexPreview: React.FC<LatexPreviewProps> = ({
     if (!isLoading && !showPlaceholder && !error && renderedHtml) {
       return (
         <div
-          className="latex-preview-stage-content px-6 py-5 latex-preview-stage-inner"
+          className="latex-scroll"
           dangerouslySetInnerHTML={{ __html: renderedHtml }}
         />
       );
@@ -145,18 +146,14 @@ const LatexPreview: React.FC<LatexPreviewProps> = ({
     return null;
   };
 
-  const stageStyle: React.CSSProperties = {
-    aspectRatio,
-    maxHeight: height,
-    width: '100%',
-  };
+  const stageStyle: React.CSSProperties =
+    variant === 'embedded'
+      ? { width: '100%', height: '100%' }
+      : { width: '100%', minHeight: height };
 
   if (variant === 'embedded') {
     return (
-      <div
-        className="rounded-2xl canvas-surface overflow-auto"
-        style={{ ...stageStyle, color: 'var(--color-text-primary)' }}
-      >
+      <div className="latex-scroll-container" style={{ ...stageStyle }}>
         {renderStageContent()}
       </div>
     );
@@ -175,10 +172,7 @@ const LatexPreview: React.FC<LatexPreviewProps> = ({
         </div>
       </div>
 
-      <div
-        className="latex-preview-stage canvas-surface rounded-2xl overflow-auto"
-        style={{ ...stageStyle, color: 'var(--color-text-primary)' }}
-      >
+      <div className="latex-scroll-container" style={{ ...stageStyle }}>
         {renderStageContent()}
       </div>
     </section>

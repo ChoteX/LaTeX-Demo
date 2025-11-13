@@ -1,90 +1,91 @@
-.latex-preview-stage {
-  background: var(--color-surface);
+.latex-scroll-container {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
 }
 
-.latex-preview-stage-inner {
+.latex-preview-state {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  text-align: center;
+  color: var(--color-text-muted);
+}
+
+.latex-scroll {
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+  padding: 1.5rem 1.75rem;
   font-family: 'Computer Modern', 'Georgia', 'Times New Roman', serif;
-  line-height: 1.6;
+  line-height: 1.65;
   color: var(--color-text-primary);
 }
 
-.latex-preview-stage-inner h1,
-.latex-preview-stage-inner h2,
-.latex-preview-stage-inner h3,
-.latex-preview-stage-inner h4,
-.latex-preview-stage-inner h5,
-.latex-preview-stage-inner h6 {
+.latex-scroll h1,
+.latex-scroll h2,
+.latex-scroll h3,
+.latex-scroll h4,
+.latex-scroll h5,
+.latex-scroll h6 {
   font-weight: 600;
   margin-top: 1.5rem;
   margin-bottom: 0.75rem;
 }
 
-.latex-preview-stage-inner h1 {
+.latex-scroll h1 {
   font-size: 1.75rem;
 }
 
-.latex-preview-stage-inner h2 {
+.latex-scroll h2 {
   font-size: 1.375rem;
 }
 
-.latex-preview-stage-inner h3 {
+.latex-scroll h3 {
   font-size: 1.125rem;
 }
 
-.latex-preview-stage-inner p {
+.latex-scroll p {
   margin-bottom: 0.75rem;
 }
 
-.latex-preview-stage-inner ol,
-.latex-preview-stage-inner ul {
+.latex-scroll ol,
+.latex-scroll ul {
   margin: 0.5rem 0 1rem 1.5rem;
   padding-left: 1rem;
 }
 
-.latex-preview-stage-inner li {
+.latex-scroll li {
   margin-bottom: 0.35rem;
 }
 
-.latex-preview-stage-inner table {
+.latex-scroll table {
   width: 100%;
   border-collapse: collapse;
   margin-bottom: 1rem;
 }
 
-.latex-preview-stage-inner th,
-.latex-preview-stage-inner td {
+.latex-scroll th,
+.latex-scroll td {
   border: 1px solid var(--color-border-muted);
   padding: 0.5rem 0.75rem;
   text-align: left;
 }
 
-.latex-preview-stage-inner .itemlabel {
+.latex-scroll .itemlabel {
   font-weight: 600;
   margin-right: 0.35rem;
 }
 
-/* Align list numbers and text on one line */
-.latex-preview-stage-inner ol.list > li,
-.latex-preview-stage-inner ul.list > li {
-  display: flex;
-  gap: 0.5rem;
-  align-items: baseline;
-}
-.latex-preview-stage-inner ol.list > li > p,
-.latex-preview-stage-inner ul.list > li > p {
-  margin: 0;
-  display: inline;
-}
-.latex-preview-stage-inner ol.list > li > .itemlabel,
-.latex-preview-stage-inner ul.list > li > .itemlabel {
-  min-width: 2ch;
-}
-
-.latex-preview-stage-inner .katex {
+.latex-scroll .katex {
   font-size: 1.05rem;
 }
 
-.latex-preview-stage-inner hr {
+.latex-scroll hr {
   margin: 1.5rem 0;
   border: none;
   border-top: 1px solid var(--color-border-muted);

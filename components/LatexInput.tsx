@@ -1,5 +1,6 @@
 
 import React, { useRef, useState } from 'react';
+import { PaperclipIcon } from './icons';
 
 interface LatexInputProps {
   value: string;
@@ -91,14 +92,12 @@ const LatexInput: React.FC<LatexInputProps> = ({ value, onChange, placeholder })
         <button
           type="button"
           onClick={handlePaperclipClick}
-          className="flex items-center justify-center w-10 h-10 rounded-full border transition hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c15f3c]"
+          className="icon-button"
           style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }}
           aria-label="Attach a .tex file"
           title="Attach a .tex file"
         >
-          <span className="text-xl" role="img" aria-hidden="true">
-            📎
-          </span>
+          <PaperclipIcon aria-hidden="true" size={20} />
         </button>
         <input
           ref={fileInputRef}
@@ -129,16 +128,14 @@ const LatexInput: React.FC<LatexInputProps> = ({ value, onChange, placeholder })
             isDraggingFile ? 'opacity-100' : 'opacity-0 pointer-events-none'
           }`}
           style={{
-            backgroundColor: 'rgba(0, 0, 0, 0.45)',
+            backgroundColor: 'rgba(0, 0, 0, 0.55)',
             color: '#ffffff',
             backdropFilter: 'blur(2px)',
             pointerEvents: 'none',
           }}
         >
-          <span className="text-4xl mb-3" role="img" aria-hidden="true">
-            📎
-          </span>
-          <p className="text-sm font-semibold uppercase tracking-wide text-center">
+          <PaperclipIcon aria-hidden="true" size={36} />
+          <p className="text-sm font-semibold uppercase tracking-wide text-center mt-3">
             Hover your .tex file to attach
           </p>
         </div>

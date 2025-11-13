@@ -4,6 +4,7 @@ import LatexInput from './components/LatexInput';
 import Button from './components/Button';
 import LatexPreview from './components/LatexPreview';
 import CliSpinner from './components/CliSpinner';
+import { SunIcon, MoonIcon, DownloadIcon } from './components/icons';
 import './styles/app.css';
 
 const FRIENDLY_RETRY_MESSAGES: Record<string, string> = {
@@ -103,7 +104,6 @@ const App: React.FC = () => {
   const [difficulty, setDifficulty] = useState<string>('medium');
   const [language, setLanguage] = useState<string>('Georgian');
   const [isArtifactOpen, setIsArtifactOpen] = useState<boolean>(false);
-  const [activeArtifactTab, setActiveArtifactTab] = useState<'code' | 'preview'>('code');
   const [artifactCopied, setArtifactCopied] = useState<boolean>(false);
   const [theme, setTheme] = useState<ThemeMode>('light');
   const [isEditingCanvas, setIsEditingCanvas] = useState<boolean>(false);
@@ -114,7 +114,6 @@ const App: React.FC = () => {
   useEffect(() => {
     if (!outputText) {
       setIsArtifactOpen(false);
-      setActiveArtifactTab('code');
       setArtifactCopied(false);
       setIsEditingCanvas(false);
     }
@@ -166,7 +165,6 @@ const App: React.FC = () => {
     setOutputText('');
     setEditableLatex('');
     setIsArtifactOpen(false);
-    setActiveArtifactTab('code');
     setArtifactCopied(false);
     setIsEditingCanvas(false);
 
@@ -206,9 +204,6 @@ const App: React.FC = () => {
     if (!outputText) return;
     setIsArtifactOpen((prev) => {
       const next = !prev;
-      if (next) {
-        setActiveArtifactTab('code');
-      }
       return next;
     });
   };
@@ -220,6 +215,18 @@ const App: React.FC = () => {
     setTimeout(() => setArtifactCopied(false), 2000);
   };
 
+  const handleDownloadArtifact = () => {
+    if (!editableLatex.trim()) return;
+    const blob = new Blob([editableLatex], { type: 'text/plain;charset=utf-8' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'math-test.tex';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(link.href);
+  };
+
   const handleEditToggle = () => {
     setIsEditingCanvas((prev) => !prev);
   };
@@ -227,23 +234,31 @@ const App: React.FC = () => {
   const disableGenerate = isLoading || !inputText.trim();
 
   const mainPanelStyle: React.CSSProperties = {
-    flexBasis: isCanvasVisible ? '45%' : '100%',
-    maxWidth: isCanvasVisible ? '45%' : '100%',
-    transform: isCanvasVisible ? 'translateX(-12px)' : 'translateX(0)',
+    flexBasis: isCanvasVisible ? '38%' : '100%',
+    maxWidth: isCanvasVisible ? '38%' : '100%',
+    transform: isCanvasVisible ? 'translateX(-36px)' : 'translateX(0)',
   };
 
   const canvasPanelStyle: React.CSSProperties = {
-    flexBasis: isCanvasVisible ? '55%' : '0%',
-    maxWidth: isCanvasVisible ? '55%' : '0%',
+    flexBasis: isCanvasVisible ? '62%' : '0%',
+    maxWidth: isCanvasVisible ? '62%' : '0%',
     opacity: isCanvasVisible ? 1 : 0,
-    transform: isCanvasVisible ? 'translateX(0)' : 'translateX(60px)',
+    transform: isCanvasVisible ? 'translateX(12px)' : 'translateX(60px)',
     pointerEvents: isCanvasVisible ? 'auto' : 'none',
   };
 
   return (
     <div className="min-h-screen font-sans" style={{ backgroundColor: 'var(--color-bg)' }}>
       <div className="w-full max-w-6xl mx-auto px-4 py-8 sm:py-10">
-        <div className="flex justify-end mb-4">
+        {isLoading && (
+          <div className="app-loading-overlay" role="status" aria-live="polite">
+            <CliSpinner />
+            <p className="mt-4 text-sm tracking-wide uppercase" style={{ color: 'var(--color-text-primary)' }}>
+              Generating output…
+            </p>
+          </div>
+        )}
+        <div className="flex justify-end mb-4 relative z-10">
           <button
             type="button"
             onClick={toggleTheme}
@@ -256,9 +271,7 @@ const App: React.FC = () => {
             aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
             title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
           >
-            <span className="text-2xl" role="img" aria-hidden="true">
-              {theme === 'light' ? '🌞' : '🌙'}
-            </span>
+            {theme === 'light' ? <SunIcon aria-hidden="true" /> : <MoonIcon aria-hidden="true" />}
           </button>
         </div>
 
@@ -428,75 +441,80 @@ const App: React.FC = () => {
                   </p>
                 </div>
                 <div className="flex items-center justify-between gap-3 flex-wrap">
-                  <div className="inline-flex surface-muted rounded-full p-1 border border-[var(--color-border-muted)]">
-                    {(['code', 'preview'] as const).map((tab) => (
-                      <button
-                        key={tab}
-                        type="button"
-                        onClick={() => setActiveArtifactTab(tab)}
-                        className={`px-4 py-1.5 text-sm font-medium rounded-full transition ${
-                          activeArtifactTab === tab ? 'shadow-sm' : ''
-                        }`}
-                        style={{
-                          backgroundColor:
-                            activeArtifactTab === tab ? 'var(--color-surface)' : 'transparent',
-                          color:
-                            activeArtifactTab === tab
-                              ? 'var(--color-accent)'
-                              : 'var(--color-text-muted)',
-                        }}
-                      >
-                        {tab === 'code' ? 'LaTeX' : 'Preview'}
-                      </button>
-                    ))}
+                  <div>
+                    <p className="text-lg font-semibold" style={{ color: 'var(--color-text-primary)' }}>
+                      LaTeX Output
+                    </p>
+                    <p className="text-xs uppercase tracking-[0.2em]" style={{ color: 'var(--color-secondary)' }}>
+                      {isEditingCanvas ? 'Editing source' : 'Previewing document'}
+                    </p>
                   </div>
                   <div className="flex items-center gap-2 flex-wrap">
-                    <button
-                      type="button"
-                      onClick={handleEditToggle}
-                      className="px-4 py-2 rounded-full text-sm font-semibold border transition"
-                      style={{
-                        borderColor: 'var(--color-accent)',
-                        color: 'var(--color-accent)',
-                        backgroundColor: isEditingCanvas ? 'var(--color-surface-muted)' : 'transparent',
-                      }}
-                    >
-                      {isEditingCanvas ? 'Done' : 'Edit'}
-                    </button>
-                    <Button
-                      variant="secondary"
-                      onClick={handleCopyArtifact}
+                  <button
+                    type="button"
+                    onClick={handleEditToggle}
+                    className="px-4 py-2 rounded-full text-sm font-semibold border transition"
+                    style={{
+                      borderColor: 'var(--color-accent)',
+                      color: 'var(--color-accent)',
+                      backgroundColor: isEditingCanvas ? 'var(--color-surface-muted)' : 'transparent',
+                    }}
+                  >
+                    {isEditingCanvas ? 'Done' : 'Edit'}
+                  </button>
+                  <Button
+                    variant="secondary"
+                    onClick={handleCopyArtifact}
                       className="px-4 py-2 text-sm font-semibold rounded-full"
                     >
                       {artifactCopied ? 'Copied!' : 'Copy'}
                     </Button>
+                    <button
+                      type="button"
+                      onClick={handleDownloadArtifact}
+                      className="icon-button"
+                      style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }}
+                      aria-label="Download LaTeX output"
+                      title="Download LaTeX output"
+                    >
+                      <DownloadIcon aria-hidden="true" size={18} />
+                    </button>
                   </div>
                 </div>
 
-                <div className="canvas-surface rounded-2xl h-[520px] overflow-hidden">
-                  {activeArtifactTab === 'code' ? (
-                    isEditingCanvas ? (
-                      <textarea
-                        value={editableLatex}
-                        onChange={(e) => setEditableLatex(e.target.value)}
-                        className="input-field w-full h-full p-4 rounded-2xl font-mono text-sm resize-none focus:ring-2 focus:ring-[#c15f3c] focus:border-[#c15f3c] outline-none transition"
-                        spellCheck="false"
-                      />
-                    ) : (
-                      <pre className="h-full overflow-auto p-4 text-sm leading-relaxed font-mono whitespace-pre-wrap">
-                        <code>{editableLatex}</code>
-                      </pre>
-                    )
+                <div className="canvas-surface rounded-2xl flex-1 overflow-hidden min-h-[420px] flex flex-col">
+                  {isEditingCanvas ? (
+                    <textarea
+                      value={editableLatex}
+                      onChange={(e) => setEditableLatex(e.target.value)}
+                      className="input-field w-full h-full p-4 rounded-2xl font-mono text-sm resize-none focus:ring-2 focus:ring-[#c15f3c] focus:border-[#c15f3c] outline-none transition"
+                      spellCheck="false"
+                    />
                   ) : (
-                    <div className="h-full p-4">
-                      <LatexPreview
-                        latex={editableLatex}
-                        title="Canvas Preview"
-                        variant="embedded"
-                        height={500}
-                      />
+                    <div className="flex-1 min-h-0">
+                      <LatexPreview latex={editableLatex} variant="embedded" />
                     </div>
                   )}
+                </div>
+                <div className="surface-muted rounded-2xl p-4 text-sm flex flex-wrap gap-6">
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.2em] text-muted mb-1">Exercises</p>
+                    <p className="font-semibold" style={{ color: 'var(--color-text-primary)' }}>
+                      {numExercises}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.2em] text-muted mb-1">Difficulty</p>
+                    <p className="font-semibold capitalize" style={{ color: 'var(--color-text-primary)' }}>
+                      {difficulty}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.2em] text-muted mb-1">Language</p>
+                    <p className="font-semibold" style={{ color: 'var(--color-text-primary)' }}>
+                      {language}
+                    </p>
+                  </div>
                 </div>
               </aside>
             </div>
