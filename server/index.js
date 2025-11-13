@@ -135,9 +135,11 @@ app.post('/api/generate', async (req, res) => {
     harder: 'noticeably harder than',
   }[difficulty] || 'of a similar difficulty to';
   const choiceLabelConfig = resolveChoiceLabelConfig(language);
-  const choiceLabelExample = choiceLabelConfig.labels
+  const choiceLabelLine = choiceLabelConfig.labels
     .map((label, index) => `${label} Option ${index + 1}`)
     .join(' \\quad ');
+  const choiceLabelExample = `\\item Sample question text?\\\\
+${choiceLabelLine}`;
 
   const prompt = `
     You are an expert math test generator. Your output must be valid LaTeX code.
@@ -149,7 +151,10 @@ app.post('/api/generate', async (req, res) => {
     2. Be written in the ${language} language.
     3. Be formatted correctly within a valid LaTeX document structure. The structure of your response should mirror the input's structure (e.g., if it uses \\begin{document}, \\section, \\item, etc., your output should too).
     4. Do not include the original problems in your response. Only generate the new problems.
-    5. When you include multiple-choice options, render them inline on one line using ${choiceLabelConfig.displayName} letters (${choiceLabelConfig.labels.join(', ')}) as labels. For example: "${choiceLabelExample}".
+    5. When you include multiple-choice options, render them inline on one line using ${choiceLabelConfig.displayName} letters (${choiceLabelConfig.labels.join(', ')}) as labels.
+       Always place the choice line on its own line immediately after the question using a LaTeX line break (e.g., end the question with \\\\).
+       For example:
+       ${choiceLabelExample}
        Do not rely on custom environments or enumitem; write them directly as inline text with math in $...$ where needed. If you need additional options, continue with the next letters of the same alphabet.
 
     Existing LaTeX Test Script:

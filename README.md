@@ -93,6 +93,7 @@ To keep documents consistent and preview-friendly, the generator follows these r
     - Georgian → `ა)`, `ბ)`, `გ)`, `დ)`
     - English / Portuguese → `a)`, `b)`, `c)`, `d)`
     - Ukrainian → `а)`, `б)`, `в)`, `г)`
+  - End the question text with `\\` (or `\\[<space>]`) so the options always appear on their own line right beneath the question
   - Continue with the next character in the same alphabet if you need more than four options
 
 Notes:
