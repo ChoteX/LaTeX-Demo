@@ -70,6 +70,8 @@ GitHub Action `.github/workflows/deploy.yml` already builds and publishes `dist/
 |                             | `ALLOWED_ORIGINS`   | Origins allowed by CORS (GitHub Pages URL + local dev). |
 |                             | `GEMINI_MODEL`      | Optional override (defaults to `gemini-2.5-pro`). |
 |                             | `MAX_EXERCISES`     | Optional clamp for exercises (default `30`). |
+|                             | `GEMINI_MAX_RETRIES` | Optional retry count for overloaded Gemini responses (default `3`). |
+|                             | `GEMINI_RETRY_BASE_DELAY_MS` | Optional base delay (in ms) for exponential backoff between Gemini retries (default `1000`). |
 | Frontend `.env` / GitHub var| `VITE_API_BASE_URL` | Base URL of the Render service; safe to share publicly. |
 | Frontend `.env` (optional)  | `VITE_REQUEST_TIMEOUT_MS` | Override request timeout (default `120000`). |
 

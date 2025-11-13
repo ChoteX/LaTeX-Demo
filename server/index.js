@@ -29,6 +29,8 @@ const CHOICE_LABELS_BY_LANGUAGE = {
     labels: ['а)', 'б)', 'в)', 'г)'],
   },
 };
+const MAX_MODEL_RETRIES = Math.max(1, Number(process.env.GEMINI_MAX_RETRIES || 3));
+const BASE_RETRY_DELAY_MS = Math.max(250, Number(process.env.GEMINI_RETRY_BASE_DELAY_MS || 1000));
 
 const resolveChoiceLabelConfig = (language) => {
   if (!language || typeof language !== 'string') {
@@ -56,6 +58,24 @@ const allowedOrigins = (process.env.ALLOWED_ORIGINS || '')
   .split(',')
   .map(normalizeOrigin)
   .filter(Boolean);
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+const isRetriableModelError = (error) => {
+  if (!error) return false;
+  const status = typeof error.status === 'number' ? error.status : undefined;
+  const code = typeof error.code === 'string' ? error.code.toUpperCase() : undefined;
+  const message = typeof error.message === 'string' ? error.message : '';
+  if (status && (status === 429 || status >= 500)) {
+    return true;
+  }
+  if (code && ['UNAVAILABLE', 'RESOURCE_EXHAUSTED', 'ABORTED'].includes(code)) {
+    return true;
+  }
+  if (/overloaded|try again later|temporarily unavailable|timeout/i.test(message)) {
+    return true;
+  }
+  return false;
+};
 
 if (!process.env.API_KEY) {
   console.warn('Warning: API_KEY is not set. Gemini requests will fail until you add it.');
@@ -167,10 +187,30 @@ ${choiceLabelLine}`;
 
   try {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-    const response = await ai.models.generateContent({
-      model: modelName,
-      contents: prompt,
-    });
+    const sendRequestWithRetry = async () => {
+      let lastError;
+      for (let attempt = 1; attempt <= MAX_MODEL_RETRIES; attempt += 1) {
+        try {
+          return await ai.models.generateContent({
+            model: modelName,
+            contents: prompt,
+          });
+        } catch (error) {
+          lastError = error;
+          if (attempt === MAX_MODEL_RETRIES || !isRetriableModelError(error)) {
+            throw error;
+          }
+          const delayMs = BASE_RETRY_DELAY_MS * 2 ** (attempt - 1);
+          const reason = error?.status || error?.code || error?.message || 'unknown error';
+          console.warn(
+            `Gemini request failed on attempt ${attempt}/${MAX_MODEL_RETRIES} (${reason}). Retrying in ${delayMs}ms...`
+          );
+          await sleep(delayMs);
+        }
+      }
+      throw lastError;
+    };
+    const response = await sendRequestWithRetry();
 
     if (!response.text) {
       throw new Error('Gemini did not return any text.');
