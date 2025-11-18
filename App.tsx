@@ -3,7 +3,8 @@ import { generateTestSamples } from './services/geminiService';
 import LatexInput from './components/LatexInput';
 import Button from './components/Button';
 import LatexPreview from './components/LatexPreview';
-import { SunIcon, MoonIcon, DownloadIcon, ResetIcon } from './components/icons';
+import CliSpinner from './components/CliSpinner';
+import { SunIcon, MoonIcon, DownloadIcon } from './components/icons';
 import './styles/app.css';
 
 const FRIENDLY_RETRY_MESSAGES: Record<string, string> = {
@@ -165,6 +166,51 @@ const App: React.FC = () => {
     setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
   };
 
+  const handleGenerate = useCallback(async () => {
+    if (!inputText.trim()) {
+      setError('Please provide LaTeX input before generating.');
+      return;
+    }
+
+    setError(null);
+    setIsLoading(true);
+    setOutputText('');
+    setEditableLatex('');
+    setIsArtifactOpen(false);
+    setArtifactCopied(false);
+    setIsEditingCanvas(false);
+
+    try {
+      const maxAttempts = 2;
+      for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+        try {
+          const result = await generateTestSamples(inputText, numExercises, difficulty, language, guidancePrompt);
+          setOutputText(result);
+          setEditableLatex(result);
+          setIsArtifactOpen(true);
+          setError(null);
+          return;
+        } catch (error) {
+          const message = error instanceof Error ? error.message : String(error);
+          const shouldRetry = CLIENT_RETRYABLE_PATTERNS.some((pattern) => pattern.test(message));
+          if (!shouldRetry || attempt === maxAttempts - 1) {
+            throw error;
+          }
+          setError('Generator is busy. Retrying automatically in 60 seconds…');
+          await sleep(CLIENT_RETRY_DELAY_MS);
+        }
+      }
+    } catch (e: unknown) {
+      const errorMessage = e instanceof Error ? e.message : 'An unexpected error occurred.';
+      const displayMessage = shouldShowFriendlyMessage(errorMessage)
+        ? getFriendlyRetryMessage(language)
+        : errorMessage;
+      setError(displayMessage);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [inputText, numExercises, difficulty, language, guidancePrompt]);
+
   const handleSend = useCallback(async () => {
     const sourceLatex = (isArtifactOpen ? editableLatex || inputText : inputText) || '';
     if (!sourceLatex.trim()) {
@@ -272,6 +318,8 @@ const App: React.FC = () => {
   const chatSubtitle = isArtifactOpen
     ? 'Ask Gemini to explain or adjust the generated worksheet.'
     : 'Write a quick note so Gemini can personalize the test further.';
+  const showSendButton = isCanvasVisible;
+  const disableGenerate = isLoading || !inputText.trim();
 
   const handleNewChat = () => {
     setInputText(DEFAULT_LATEX_SAMPLE);
@@ -307,12 +355,10 @@ const App: React.FC = () => {
           <button
             type="button"
             onClick={handleNewChat}
-            className="icon-button"
-            style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }}
-            aria-label="Start a new chat"
-            title="Start a new chat"
+            className="text-sm font-semibold"
+            style={{ color: 'var(--color-text-primary)' }}
           >
-            <ResetIcon aria-hidden="true" size={18} />
+            New Chat
           </button>
           <button
             type="button"
@@ -366,6 +412,7 @@ const App: React.FC = () => {
               onSubmit={handleSend}
               attachedFileName={attachedFileName}
               onAttachmentChange={setAttachedFileName}
+              showSubmitButton={showSendButton}
             />
 
             {outputText && (
@@ -478,6 +525,19 @@ const App: React.FC = () => {
                   </div>
                 </div>
               </div>
+            </div>
+
+            <div className="mt-8 text-center">
+              <Button onClick={handleGenerate} disabled={disableGenerate}>
+                {isLoading ? (
+                  <div className="flex items-center justify-center gap-3">
+                    <CliSpinner color="#fff" />
+                    <span className="font-semibold tracking-wide">Generating…</span>
+                  </div>
+                ) : (
+                  'Generate Test'
+                )}
+              </Button>
             </div>
 
             {error && (

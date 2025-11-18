@@ -16,6 +16,7 @@ interface LatexInputProps {
   onSubmit: () => void;
   attachedFileName: string | null;
   onAttachmentChange?: (name: string | null) => void;
+  showSubmitButton: boolean;
 }
 
 const PROMPT_COLLAPSED_MAX_WIDTH = 880;
@@ -42,6 +43,7 @@ const LatexInput: React.FC<LatexInputProps> = ({
   onSubmit,
   attachedFileName,
   onAttachmentChange,
+  showSubmitButton,
 }) => {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const promptTextareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -52,13 +54,20 @@ const LatexInput: React.FC<LatexInputProps> = ({
   const isPromptMode = mode === 'prompt';
 
   useLayoutEffect(() => {
-    const hasManualBreak = promptValue.includes('\n');
-    const charTrigger = promptValue.trim().length > PROMPT_EXPAND_CHAR_THRESHOLD;
-    let heightTrigger = false;
-    if (isPromptMode && promptTextareaRef.current) {
-      heightTrigger = promptTextareaRef.current.scrollHeight > PROMPT_GROW_TRIGGER_HEIGHT;
+    if (!isPromptMode) {
+      setIsPromptExpanded(false);
+      return;
     }
-    const shouldExpand = hasManualBreak || charTrigger || heightTrigger;
+    const textarea = promptTextareaRef.current;
+    const trimmed = promptValue.trim();
+    if (textarea) {
+      textarea.style.height = 'auto';
+      textarea.style.height = `${textarea.scrollHeight}px`;
+    }
+    const hasManualBreak = promptValue.includes('\n');
+    const charTrigger = trimmed.length > PROMPT_EXPAND_CHAR_THRESHOLD;
+    const heightTrigger = textarea ? textarea.scrollHeight > PROMPT_GROW_TRIGGER_HEIGHT : false;
+    const shouldExpand = trimmed.length > 0 && (hasManualBreak || charTrigger || heightTrigger);
     setIsPromptExpanded(shouldExpand);
   }, [promptValue, isPromptMode]);
 
@@ -280,27 +289,31 @@ const LatexInput: React.FC<LatexInputProps> = ({
           </div>
         )}
       </div>
-      <div className="mt-4 flex flex-wrap items-center gap-3">
-        {attachedFileName && (
-          <div className="attachment-pill" role="status" aria-live="polite">
-            <span className="attachment-pill__text">{attachedFileName}</span>
-            <button type="button" onClick={handleAttachmentClear} aria-label="Remove attached file">
-              &times;
-            </button>
-          </div>
-        )}
-        <div className="ml-auto">
-          <button
-            type="button"
-            className="chat-send-button"
-            onClick={onSubmit}
-            disabled={disableSubmit || isSubmitting}
-          >
-            {isSubmitting ? 'Sending…' : 'Send'}
-            <PaperAirplaneIcon aria-hidden="true" size={16} />
-          </button>
+      {(attachedFileName || showSubmitButton) && (
+        <div className="mt-4 flex flex-wrap items-center gap-3 w-full">
+          {attachedFileName && (
+            <div className="attachment-pill" role="status" aria-live="polite">
+              <span className="attachment-pill__text">{attachedFileName}</span>
+              <button type="button" onClick={handleAttachmentClear} aria-label="Remove attached file">
+                &times;
+              </button>
+            </div>
+          )}
+          {showSubmitButton && (
+            <div className="ml-auto">
+              <button
+                type="button"
+                className="chat-send-button"
+                onClick={onSubmit}
+                disabled={disableSubmit || isSubmitting}
+              >
+                {isSubmitting ? 'Sending…' : 'Send'}
+                <PaperAirplaneIcon aria-hidden="true" size={16} />
+              </button>
+            </div>
+          )}
         </div>
-      </div>
+      )}
     </div>
   );
 };
