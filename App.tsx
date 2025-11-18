@@ -3,8 +3,7 @@ import { generateTestSamples } from './services/geminiService';
 import LatexInput from './components/LatexInput';
 import Button from './components/Button';
 import LatexPreview from './components/LatexPreview';
-import CliSpinner from './components/CliSpinner';
-import { SunIcon, MoonIcon, DownloadIcon } from './components/icons';
+import { SunIcon, MoonIcon, DownloadIcon, ResetIcon } from './components/icons';
 import './styles/app.css';
 
 const FRIENDLY_RETRY_MESSAGES: Record<string, string> = {
@@ -109,6 +108,7 @@ const App: React.FC = () => {
   const [language, setLanguage] = useState<string>('Georgian');
   const [guidancePrompt, setGuidancePrompt] = useState<string>('');
   const [inputMode, setInputMode] = useState<'prompt' | 'latex'>('prompt');
+  const [attachedFileName, setAttachedFileName] = useState<string | null>(null);
   const [isArtifactOpen, setIsArtifactOpen] = useState<boolean>(false);
   const [artifactCopied, setArtifactCopied] = useState<boolean>(false);
   const [theme, setTheme] = useState<ThemeMode>('light');
@@ -165,7 +165,13 @@ const App: React.FC = () => {
     setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
   };
 
-  const handleGenerate = useCallback(async () => {
+  const handleSend = useCallback(async () => {
+    const sourceLatex = (isArtifactOpen ? editableLatex || inputText : inputText) || '';
+    if (!sourceLatex.trim()) {
+      setError('Please provide LaTeX input before sending.');
+      return;
+    }
+
     setError(null);
     setIsLoading(true);
     setOutputText('');
@@ -178,7 +184,8 @@ const App: React.FC = () => {
       const maxAttempts = 2;
       for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
         try {
-          const result = await generateTestSamples(inputText, numExercises, difficulty, language, guidancePrompt);
+          const result = await generateTestSamples(sourceLatex, numExercises, difficulty, language, guidancePrompt);
+          setInputText(sourceLatex);
           setOutputText(result);
           setEditableLatex(result);
           setIsArtifactOpen(true);
@@ -203,7 +210,7 @@ const App: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [inputText, numExercises, difficulty, language, guidancePrompt]);
+  }, [isArtifactOpen, editableLatex, inputText, numExercises, difficulty, language, guidancePrompt]);
 
   const handleArtifactCardClick = () => {
     if (!outputText) return;
@@ -259,7 +266,25 @@ const App: React.FC = () => {
     setIsEditingCanvas((prev) => !prev);
   };
 
-  const disableGenerate = isLoading || !inputText.trim();
+  const currentLatexSource = isArtifactOpen ? editableLatex || inputText : inputText;
+  const disableSend = isLoading || !currentLatexSource.trim();
+  const chatStatusLabel = isArtifactOpen ? 'Explain your modifications' : 'Guidance Prompt';
+  const chatSubtitle = isArtifactOpen
+    ? 'Ask Gemini to explain or adjust the generated worksheet.'
+    : 'Write a quick note so Gemini can personalize the test further.';
+
+  const handleNewChat = () => {
+    setInputText(DEFAULT_LATEX_SAMPLE);
+    setGuidancePrompt('');
+    setOutputText('');
+    setEditableLatex('');
+    setAttachedFileName(null);
+    setIsArtifactOpen(false);
+    setArtifactCopied(false);
+    setIsEditingCanvas(false);
+    setInputMode('prompt');
+    setError(null);
+  };
 
   const mainPanelStyle: React.CSSProperties = {
     flexBasis: isCanvasVisible ? '34%' : '100%',
@@ -278,7 +303,17 @@ const App: React.FC = () => {
   return (
     <div className="min-h-screen font-sans" style={{ backgroundColor: 'var(--color-bg)' }}>
       <div className="w-full max-w-6xl mx-auto px-4 py-8 sm:py-10">
-        <div className="flex justify-end mb-4 relative z-10">
+        <div className="flex items-center justify-between mb-4 relative z-10">
+          <button
+            type="button"
+            onClick={handleNewChat}
+            className="icon-button"
+            style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }}
+            aria-label="Start a new chat"
+            title="Start a new chat"
+          >
+            <ResetIcon aria-hidden="true" size={18} />
+          </button>
           <button
             type="button"
             onClick={toggleTheme}
@@ -324,6 +359,13 @@ const App: React.FC = () => {
               mode={inputMode}
               onModeChange={setInputMode}
               placeholder={DEFAULT_LATEX_SAMPLE}
+              chatStatusLabel={chatStatusLabel}
+              chatSubtitle={chatSubtitle}
+              isSubmitting={isLoading}
+              disableSubmit={disableSend}
+              onSubmit={handleSend}
+              attachedFileName={attachedFileName}
+              onAttachmentChange={setAttachedFileName}
             />
 
             {outputText && (
@@ -436,19 +478,6 @@ const App: React.FC = () => {
                   </div>
                 </div>
               </div>
-            </div>
-
-            <div className="mt-8 text-center">
-              <Button onClick={handleGenerate} disabled={disableGenerate}>
-                {isLoading ? (
-                  <div className="flex items-center justify-center gap-3">
-                    <CliSpinner color="#fff" />
-                    <span className="font-semibold tracking-wide">Generating…</span>
-                  </div>
-                ) : (
-                  'Generate Test'
-                )}
-              </Button>
             </div>
 
             {error && (

@@ -1,5 +1,5 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { PaperclipIcon } from './icons';
+import React, { useLayoutEffect, useRef, useState } from 'react';
+import { PaperclipIcon, PaperAirplaneIcon } from './icons';
 
 interface LatexInputProps {
   latexValue: string;
@@ -9,13 +9,21 @@ interface LatexInputProps {
   mode: 'prompt' | 'latex';
   onModeChange: (mode: 'prompt' | 'latex') => void;
   placeholder?: string;
+  chatStatusLabel: string;
+  chatSubtitle: string;
+  isSubmitting: boolean;
+  disableSubmit: boolean;
+  onSubmit: () => void;
+  attachedFileName: string | null;
+  onAttachmentChange?: (name: string | null) => void;
 }
 
-const PROMPT_COLLAPSED_MAX_WIDTH = 760;
-const PROMPT_EXPANDED_MAX_WIDTH = 820;
-const PROMPT_BASE_MIN_HEIGHT = 110;
-const PROMPT_EXPANDED_MIN_HEIGHT = 230;
-const PROMPT_GROW_TRIGGER_HEIGHT = 165;
+const PROMPT_COLLAPSED_MAX_WIDTH = 880;
+const PROMPT_EXPANDED_MAX_WIDTH = 940;
+const PROMPT_BASE_MIN_HEIGHT = 120;
+const PROMPT_EXPANDED_MIN_HEIGHT = 260;
+const PROMPT_GROW_TRIGGER_HEIGHT = 180;
+const PROMPT_EXPAND_CHAR_THRESHOLD = 120;
 const LATEX_FIXED_MIN_HEIGHT = PROMPT_EXPANDED_MIN_HEIGHT;
 const TRANSITION_TIMING = 'cubic-bezier(0.33, 1, 0.68, 1)';
 
@@ -27,6 +35,13 @@ const LatexInput: React.FC<LatexInputProps> = ({
   mode,
   onModeChange,
   placeholder,
+  chatStatusLabel,
+  chatSubtitle,
+  isSubmitting,
+  disableSubmit,
+  onSubmit,
+  attachedFileName,
+  onAttachmentChange,
 }) => {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const promptTextareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -36,16 +51,15 @@ const LatexInput: React.FC<LatexInputProps> = ({
 
   const isPromptMode = mode === 'prompt';
 
-  useEffect(() => {
-    if (!isPromptMode || !promptTextareaRef.current) {
-      setIsPromptExpanded(false);
-      return;
+  useLayoutEffect(() => {
+    const hasManualBreak = promptValue.includes('\n');
+    const charTrigger = promptValue.trim().length > PROMPT_EXPAND_CHAR_THRESHOLD;
+    let heightTrigger = false;
+    if (isPromptMode && promptTextareaRef.current) {
+      heightTrigger = promptTextareaRef.current.scrollHeight > PROMPT_GROW_TRIGGER_HEIGHT;
     }
-    const textarea = promptTextareaRef.current;
-    textarea.style.height = 'auto';
-    textarea.style.height = `${textarea.scrollHeight}px`;
-    const hasManualBreak = textarea.value.includes('\n');
-    setIsPromptExpanded(hasManualBreak || textarea.scrollHeight > PROMPT_GROW_TRIGGER_HEIGHT);
+    const shouldExpand = hasManualBreak || charTrigger || heightTrigger;
+    setIsPromptExpanded(shouldExpand);
   }, [promptValue, isPromptMode]);
 
   const handlePaperclipClick = () => {
@@ -53,7 +67,10 @@ const LatexInput: React.FC<LatexInputProps> = ({
   };
 
   const loadTexFile = (file: File | undefined | null) => {
-    if (!file) return;
+    if (!file) {
+      onAttachmentChange?.(null);
+      return;
+    }
     const isTexFile =
       file.name.toLowerCase().endsWith('.tex') ||
       file.type === 'application/x-tex' ||
@@ -65,6 +82,7 @@ const LatexInput: React.FC<LatexInputProps> = ({
       return;
     }
 
+    onAttachmentChange?.(file.name);
     const reader = new FileReader();
     reader.onload = () => {
       if (typeof reader.result === 'string') {
@@ -114,6 +132,10 @@ const LatexInput: React.FC<LatexInputProps> = ({
     loadTexFile(file ?? null);
   };
 
+  const handleAttachmentClear = () => {
+    onAttachmentChange?.(null);
+  };
+
   const toggleButtonClass = (targetMode: 'prompt' | 'latex') => {
     const isActive = mode === targetMode;
     return [
@@ -136,6 +158,8 @@ const LatexInput: React.FC<LatexInputProps> = ({
   const promptTextareaStyle: React.CSSProperties = {
     backgroundColor: 'var(--color-input-bg)',
     minHeight: `${isPromptExpanded ? PROMPT_EXPANDED_MIN_HEIGHT : PROMPT_BASE_MIN_HEIGHT}px`,
+    maxHeight: `${PROMPT_EXPANDED_MIN_HEIGHT}px`,
+    overflowY: isPromptExpanded ? 'auto' : 'hidden',
     transition: `min-height 360ms ${TRANSITION_TIMING}`,
   };
 
@@ -172,11 +196,11 @@ const LatexInput: React.FC<LatexInputProps> = ({
             className="block text-lg font-medium"
             style={{ color: 'var(--color-text-primary)' }}
           >
-            {isPromptMode ? 'Guidance Prompt' : 'Paste Existing LaTeX Script'}
+            {isPromptMode ? chatStatusLabel : 'Paste Existing LaTeX Script'}
           </label>
           <span className="text-xs italic text-muted">
             {isPromptMode
-              ? 'Write a quick note so Gemini can personalize the test further.'
+              ? chatSubtitle
               : 'Leave the default prompt for quick results or replace it with your own.'}
           </span>
         </div>
@@ -185,25 +209,25 @@ const LatexInput: React.FC<LatexInputProps> = ({
             className="flex items-center gap-1 rounded-full border px-1 py-1"
             style={{ borderColor: 'var(--color-border-muted)', backgroundColor: 'var(--color-surface-muted)' }}
             role="group"
-              aria-label="Switch between prompt and LaTeX input modes"
+            aria-label="Switch between prompt and LaTeX input modes"
+          >
+            <button
+              type="button"
+              className={toggleButtonClass('prompt')}
+              onClick={() => onModeChange('prompt')}
+              aria-pressed={isPromptMode}
             >
-              <button
-                type="button"
-                className={toggleButtonClass('prompt')}
-                onClick={() => onModeChange('prompt')}
-                aria-pressed={isPromptMode}
-              >
-                Chat
-              </button>
-              <button
-                type="button"
-                className={toggleButtonClass('latex')}
-                onClick={() => onModeChange('latex')}
-                aria-pressed={!isPromptMode}
-              >
-                LaTeX
-              </button>
-            </div>
+              Chat
+            </button>
+            <button
+              type="button"
+              className={toggleButtonClass('latex')}
+              onClick={() => onModeChange('latex')}
+              aria-pressed={!isPromptMode}
+            >
+              LaTeX
+            </button>
+          </div>
             <button
               type="button"
               onClick={handlePaperclipClick}
@@ -219,8 +243,8 @@ const LatexInput: React.FC<LatexInputProps> = ({
               type="file"
               accept=".tex,application/x-tex,text/x-tex,application/x-latex"
               className="sr-only"
-            onChange={handleFileInputChange}
-          />
+              onChange={handleFileInputChange}
+            />
         </div>
       </div>
 
@@ -255,6 +279,27 @@ const LatexInput: React.FC<LatexInputProps> = ({
             {renderDropOverlay()}
           </div>
         )}
+      </div>
+      <div className="mt-4 flex flex-wrap items-center gap-3">
+        {attachedFileName && (
+          <div className="attachment-pill" role="status" aria-live="polite">
+            <span className="attachment-pill__text">{attachedFileName}</span>
+            <button type="button" onClick={handleAttachmentClear} aria-label="Remove attached file">
+              &times;
+            </button>
+          </div>
+        )}
+        <div className="ml-auto">
+          <button
+            type="button"
+            className="chat-send-button"
+            onClick={onSubmit}
+            disabled={disableSubmit || isSubmitting}
+          >
+            {isSubmitting ? 'Sending…' : 'Send'}
+            <PaperAirplaneIcon aria-hidden="true" size={16} />
+          </button>
+        </div>
       </div>
     </div>
   );

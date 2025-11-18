@@ -44,3 +44,23 @@ export const DownloadIcon: React.FC<IconProps> = ({ size = 20, ...rest }) => (
     <path {...baseStrokeProps} d="M5 19h14" />
   </svg>
 );
+
+export const PaperAirplaneIcon: React.FC<IconProps> = ({ size = 18, ...rest }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" {...rest}>
+    <path
+      {...baseStrokeProps}
+      d="m4 10.5 15-7-4.5 16-4-5.5-6.5-1.5 6.5-1.5 4 5.5"
+    />
+  </svg>
+);
+
+export const ResetIcon: React.FC<IconProps> = ({ size = 20, ...rest }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" {...rest}>
+    <path {...baseStrokeProps} d="M8 4H4v4" />
+    <path {...baseStrokeProps} d="M4 4 9 9" />
+    <path {...baseStrokeProps} d="M16 20h4v-4" />
+    <path {...baseStrokeProps} d="m20 20-5-5" />
+    <path {...baseStrokeProps} d="M7 12a5 5 0 0 1 5-5h5" />
+    <path {...baseStrokeProps} d="M17 12a5 5 0 0 1-5 5H7" />
+  </svg>
+);
