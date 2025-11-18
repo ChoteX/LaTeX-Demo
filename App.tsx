@@ -12,6 +12,7 @@ const FRIENDLY_RETRY_MESSAGES: Record<string, string> = {
   english: 'The generator is busy right now. Please try again in about a minute.',
   portuguese: 'O gerador está ocupado no momento. Tente novamente em cerca de um minuto.',
   ukrainian: 'Генератор зараз зайнятий. Спробуйте ще раз приблизно за хвилину.',
+  arabic: 'المولّد مشغول حالياً. يُرجى المحاولة مرة أخرى في غضون دقيقة تقريباً.',
 };
 
 const FRIENDLY_ERROR_PATTERNS = [
@@ -106,6 +107,8 @@ const App: React.FC = () => {
   const [numExercisesInput, setNumExercisesInput] = useState<string>(String(DEFAULT_EXERCISE_COUNT));
   const [difficulty, setDifficulty] = useState<string>('medium');
   const [language, setLanguage] = useState<string>('Georgian');
+  const [guidancePrompt, setGuidancePrompt] = useState<string>('');
+  const [inputMode, setInputMode] = useState<'prompt' | 'latex'>('prompt');
   const [isArtifactOpen, setIsArtifactOpen] = useState<boolean>(false);
   const [artifactCopied, setArtifactCopied] = useState<boolean>(false);
   const [theme, setTheme] = useState<ThemeMode>('light');
@@ -175,7 +178,7 @@ const App: React.FC = () => {
       const maxAttempts = 2;
       for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
         try {
-          const result = await generateTestSamples(inputText, numExercises, difficulty, language);
+          const result = await generateTestSamples(inputText, numExercises, difficulty, language, guidancePrompt);
           setOutputText(result);
           setEditableLatex(result);
           setIsArtifactOpen(true);
@@ -200,7 +203,7 @@ const App: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [inputText, numExercises, difficulty, language]);
+  }, [inputText, numExercises, difficulty, language, guidancePrompt]);
 
   const handleArtifactCardClick = () => {
     if (!outputText) return;
@@ -313,7 +316,15 @@ const App: React.FC = () => {
             className="surface-card rounded-3xl shadow-sm p-6 sm:p-8 transition-all duration-500 ease-out"
             style={mainPanelStyle}
           >
-            <LatexInput value={inputText} onChange={setInputText} placeholder={DEFAULT_LATEX_SAMPLE} />
+            <LatexInput
+              latexValue={inputText}
+              promptValue={guidancePrompt}
+              onLatexChange={setInputText}
+              onPromptChange={setGuidancePrompt}
+              mode={inputMode}
+              onModeChange={setInputMode}
+              placeholder={DEFAULT_LATEX_SAMPLE}
+            />
 
             {outputText && (
               <button
@@ -415,6 +426,7 @@ const App: React.FC = () => {
                       <option value="English">English</option>
                       <option value="Portuguese">Portuguese</option>
                       <option value="Ukrainian">Ukrainian</option>
+                      <option value="Arabic">Arabic</option>
                     </select>
                     <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-muted">
                       <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">

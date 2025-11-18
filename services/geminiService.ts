@@ -13,7 +13,8 @@ export async function generateTestSamples(
   existingTestLatex: string,
   numExercises: number,
   difficulty: string,
-  language: string
+  language: string,
+  guidancePrompt?: string
 ): Promise<string> {
   if (!existingTestLatex.trim()) {
     throw new Error("Input LaTeX script cannot be empty.");
@@ -33,6 +34,7 @@ export async function generateTestSamples(
         numExercises,
         difficulty,
         language,
+        guidancePrompt,
       }),
       signal: controller.signal,
     });

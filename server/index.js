@@ -28,6 +28,10 @@ const CHOICE_LABELS_BY_LANGUAGE = {
     displayName: 'Ukrainian',
     labels: ['а)', 'б)', 'в)', 'г)'],
   },
+  arabic: {
+    displayName: 'Arabic',
+    labels: ['أ)', 'ب)', 'ج)', 'د)'],
+  },
 };
 const MAX_MODEL_RETRIES = Math.max(1, Number(process.env.GEMINI_MAX_RETRIES || 3));
 const BASE_RETRY_DELAY_MS = Math.max(250, Number(process.env.GEMINI_RETRY_BASE_DELAY_MS || 1000));
@@ -146,7 +150,7 @@ app.get('/health', (_req, res) => {
 });
 
 app.post('/api/generate', async (req, res) => {
-  const { existingTestLatex, numExercises, difficulty, language } = req.body || {};
+  const { existingTestLatex, numExercises, difficulty, language, guidancePrompt } = req.body || {};
 
   if (!process.env.API_KEY) {
     return res.status(500).json({ error: 'Server is missing the Gemini API key.' });
@@ -180,6 +184,16 @@ app.post('/api/generate', async (req, res) => {
   const choiceLabelExample = `\\item Sample question text?\\\\
 ${choiceLabelLine}`;
 
+  const trimmedGuidance = typeof guidancePrompt === 'string' ? guidancePrompt.trim() : '';
+  const customGuidanceSection = trimmedGuidance
+    ? `
+    Additional instructor guidance (follow every detail precisely):
+    """
+    ${trimmedGuidance}
+    """
+  `
+    : '';
+
   const prompt = `
     You are an expert math test generator. Your output must be valid LaTeX code.
 
@@ -196,6 +210,7 @@ ${choiceLabelLine}`;
        ${choiceLabelExample}
        Do not rely on custom environments or enumitem; write them directly as inline text with math in $...$ where needed. If you need additional options, continue with the next letters of the same alphabet.
     6. Keep every enumerated problem statement on the same line as its number (e.g., "\\item Describe ..."). Do not insert a manual line break before the statement; only add \\\\ once the sentence is complete.
+    ${customGuidanceSection}
 
     Existing LaTeX Test Script:
     ---
