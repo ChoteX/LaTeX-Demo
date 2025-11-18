@@ -11,6 +11,14 @@ interface LatexInputProps {
   placeholder?: string;
 }
 
+const PROMPT_COLLAPSED_MAX_WIDTH = 760;
+const PROMPT_EXPANDED_MAX_WIDTH = 820;
+const PROMPT_BASE_MIN_HEIGHT = 110;
+const PROMPT_EXPANDED_MIN_HEIGHT = 230;
+const PROMPT_GROW_TRIGGER_HEIGHT = 165;
+const LATEX_FIXED_MIN_HEIGHT = PROMPT_EXPANDED_MIN_HEIGHT;
+const TRANSITION_TIMING = 'cubic-bezier(0.33, 1, 0.68, 1)';
+
 const LatexInput: React.FC<LatexInputProps> = ({
   latexValue,
   promptValue,
@@ -36,16 +44,9 @@ const LatexInput: React.FC<LatexInputProps> = ({
     const textarea = promptTextareaRef.current;
     textarea.style.height = 'auto';
     textarea.style.height = `${textarea.scrollHeight}px`;
-    const multilineThreshold = 96;
     const hasManualBreak = textarea.value.includes('\n');
-    setIsPromptExpanded(hasManualBreak || textarea.scrollHeight > multilineThreshold);
+    setIsPromptExpanded(hasManualBreak || textarea.scrollHeight > PROMPT_GROW_TRIGGER_HEIGHT);
   }, [promptValue, isPromptMode]);
-
-  useEffect(() => {
-    if (mode === 'latex') return;
-    dragCounter.current = 0;
-    setIsDraggingFile(false);
-  }, [mode]);
 
   const handlePaperclipClick = () => {
     fileInputRef.current?.click();
@@ -126,14 +127,44 @@ const LatexInput: React.FC<LatexInputProps> = ({
     ].join(' ');
   };
 
-  const promptWrapperStyle: React.CSSProperties = isPromptExpanded
-    ? {}
-    : {
-        maxWidth: '520px',
-      };
+  const promptWrapperStyle: React.CSSProperties = {
+    maxWidth: `${isPromptExpanded ? PROMPT_EXPANDED_MAX_WIDTH : PROMPT_COLLAPSED_MAX_WIDTH}px`,
+    marginLeft: 'auto',
+    marginRight: 'auto',
+    transition: `max-width 420ms ${TRANSITION_TIMING}`,
+  };
+  const promptTextareaStyle: React.CSSProperties = {
+    backgroundColor: 'var(--color-input-bg)',
+    minHeight: `${isPromptExpanded ? PROMPT_EXPANDED_MIN_HEIGHT : PROMPT_BASE_MIN_HEIGHT}px`,
+    transition: `min-height 360ms ${TRANSITION_TIMING}`,
+  };
+
+  const renderDropOverlay = () => (
+    <div
+      className={`pointer-events-none absolute inset-0 flex flex-col items-center justify-center rounded-2xl transition-opacity duration-300 ${
+        isDraggingFile ? 'opacity-100' : 'opacity-0'
+      }`}
+      style={{
+        backgroundColor: 'rgba(0, 0, 0, 0.55)',
+        color: '#ffffff',
+        backdropFilter: 'blur(3px)',
+      }}
+    >
+      <PaperclipIcon aria-hidden="true" size={36} />
+      <p className="text-sm font-semibold uppercase tracking-wide text-center mt-3 px-4">
+        Drop your .tex file anywhere to update the LaTeX input
+      </p>
+    </div>
+  );
 
   return (
-    <div className="w-full">
+    <div
+      className="w-full relative"
+      onDragEnter={handleDragEnter}
+      onDragLeave={handleDragLeave}
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
+    >
       <div className="flex flex-col gap-4 mb-4 lg:flex-row lg:items-start lg:justify-between">
         <div className="flex flex-col">
           <label
@@ -154,26 +185,25 @@ const LatexInput: React.FC<LatexInputProps> = ({
             className="flex items-center gap-1 rounded-full border px-1 py-1"
             style={{ borderColor: 'var(--color-border-muted)', backgroundColor: 'var(--color-surface-muted)' }}
             role="group"
-            aria-label="Switch between prompt and LaTeX input modes"
-          >
-            <button
-              type="button"
-              className={toggleButtonClass('prompt')}
-              onClick={() => onModeChange('prompt')}
-              aria-pressed={isPromptMode}
+              aria-label="Switch between prompt and LaTeX input modes"
             >
-              Prompt
-            </button>
-            <button
-              type="button"
-              className={toggleButtonClass('latex')}
-              onClick={() => onModeChange('latex')}
-              aria-pressed={!isPromptMode}
-            >
-              LaTeX
-            </button>
-          </div>
-          {mode === 'latex' && (
+              <button
+                type="button"
+                className={toggleButtonClass('prompt')}
+                onClick={() => onModeChange('prompt')}
+                aria-pressed={isPromptMode}
+              >
+                Chat
+              </button>
+              <button
+                type="button"
+                className={toggleButtonClass('latex')}
+                onClick={() => onModeChange('latex')}
+                aria-pressed={!isPromptMode}
+              >
+                LaTeX
+              </button>
+            </div>
             <button
               type="button"
               onClick={handlePaperclipClick}
@@ -184,70 +214,48 @@ const LatexInput: React.FC<LatexInputProps> = ({
             >
               <PaperclipIcon aria-hidden="true" size={20} />
             </button>
-          )}
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".tex,application/x-tex,text/x-tex,application/x-latex"
-            className="sr-only"
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".tex,application/x-tex,text/x-tex,application/x-latex"
+              className="sr-only"
             onChange={handleFileInputChange}
           />
         </div>
       </div>
 
-      {isPromptMode ? (
-        <div
-          className={`w-full transition-all duration-300 ${isPromptExpanded ? 'max-w-full' : 'md:max-w-3xl'}`}
-          style={promptWrapperStyle}
-        >
-          <textarea
-            id="guidance-prompt"
-            ref={promptTextareaRef}
-            value={promptValue}
-            onChange={(event) => onPromptChange(event.target.value)}
-            placeholder="How can I help you today?"
-            className="input-field w-full resize-none rounded-2xl p-4 text-base leading-relaxed focus:ring-2 focus:ring-[#c15f3c] focus:border-[#c15f3c] outline-none transition-colors prompt-textarea"
-            style={{
-              backgroundColor: 'var(--color-input-bg)',
-              minHeight: isPromptExpanded ? '140px' : '72px',
-            }}
-          />
-        </div>
-      ) : (
-        <div
-          className="relative"
-          onDragEnter={handleDragEnter}
-          onDragLeave={handleDragLeave}
-          onDragOver={handleDragOver}
-          onDrop={handleDrop}
-        >
-          <textarea
-            id="latex-input"
-            value={latexValue}
-            onChange={(e) => onLatexChange(e.target.value)}
-            placeholder={placeholder}
-            className="input-field w-full h-64 p-4 rounded-2xl font-mono text-sm resize-none focus:ring-2 focus:ring-[#c15f3c] focus:border-[#c15f3c] outline-none transition-colors"
-            style={{ backgroundColor: 'var(--color-input-bg)' }}
-            spellCheck="false"
-          />
+      <div className="relative w-full">
+        {isPromptMode ? (
           <div
-            className={`absolute inset-0 flex flex-col items-center justify-center rounded-2xl transition-opacity duration-200 ${
-              isDraggingFile ? 'opacity-100' : 'opacity-0 pointer-events-none'
-            }`}
-            style={{
-              backgroundColor: 'rgba(0, 0, 0, 0.55)',
-              color: '#ffffff',
-              backdropFilter: 'blur(2px)',
-              pointerEvents: 'none',
-            }}
+            className="w-full transition-all duration-500 relative"
+            style={promptWrapperStyle}
           >
-            <PaperclipIcon aria-hidden="true" size={36} />
-            <p className="text-sm font-semibold uppercase tracking-wide text-center mt-3">
-              Hover your .tex file to attach
-            </p>
+            <textarea
+              id="guidance-prompt"
+              ref={promptTextareaRef}
+              value={promptValue}
+              onChange={(event) => onPromptChange(event.target.value)}
+              placeholder="How can I help you today?"
+              className="input-field w-full resize-none rounded-2xl p-4 text-base leading-relaxed focus:ring-2 focus:ring-[#c15f3c] focus:border-[#c15f3c] outline-none transition-colors prompt-textarea"
+              style={promptTextareaStyle}
+            />
+            {renderDropOverlay()}
           </div>
-        </div>
-      )}
+        ) : (
+          <div className="relative">
+            <textarea
+              id="latex-input"
+              value={latexValue}
+              onChange={(e) => onLatexChange(e.target.value)}
+              placeholder={placeholder}
+              className="input-field w-full p-4 rounded-2xl font-mono text-sm resize-none focus:ring-2 focus:ring-[#c15f3c] focus:border-[#c15f3c] outline-none transition-colors"
+              style={{ backgroundColor: 'var(--color-input-bg)', minHeight: `${LATEX_FIXED_MIN_HEIGHT}px` }}
+              spellCheck="false"
+            />
+            {renderDropOverlay()}
+          </div>
+        )}
+      </div>
     </div>
   );
 };
