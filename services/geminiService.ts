@@ -4,8 +4,14 @@ const DEFAULT_TIMEOUT_MS = Number(import.meta.env.VITE_REQUEST_TIMEOUT_MS ?? 120
 const RAW_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
 const API_BASE_URL = RAW_BASE_URL.replace(/\/+$/, "");
 
+interface Answer {
+  questionNumber: number;
+  correctAnswer: string;
+}
+
 interface GenerateResponse {
   latex: string;
+  answerKey?: Answer[];
   error?: string;
 }
 
@@ -15,7 +21,7 @@ export async function generateTestSamples(
   difficulty: string,
   language: string,
   guidancePrompt?: string
-): Promise<string> {
+): Promise<{ latex: string; answerKey: Answer[] }> {
   if (!existingTestLatex.trim()) {
     throw new Error("Input LaTeX script cannot be empty.");
   }
@@ -54,7 +60,10 @@ export async function generateTestSamples(
       throw new Error("Malformed response from the server.");
     }
 
-    return ensureLatexDocument(payload.latex.trim());
+    return {
+      latex: ensureLatexDocument(payload.latex.trim()),
+      answerKey: payload.answerKey || [],
+    };
   } catch (error) {
     if (error instanceof DOMException && error.name === "AbortError") {
       throw new Error("The request timed out. Please try again.");

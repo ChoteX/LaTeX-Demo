@@ -4,6 +4,7 @@ import LatexInput from './components/LatexInput';
 import Button from './components/Button';
 import LatexPreview from './components/LatexPreview';
 import CliSpinner from './components/CliSpinner';
+import AnswerSheet from './components/AnswerSheet';
 import { SunIcon, MoonIcon, DownloadIcon } from './components/icons';
 import './styles/app.css';
 
@@ -96,6 +97,11 @@ a) $\frac{5}{8}$ \quad b) $\frac{1}{4}$ \quad c) $\frac{5}{16}$ \quad d) $\frac{
 
 const DEFAULT_EXERCISE_COUNT = 10;
 
+interface Answer {
+  questionNumber: number;
+  correctAnswer: string;
+}
+
 const App: React.FC = () => {
   const [inputText, setInputText] = useState<string>(DEFAULT_LATEX_SAMPLE);
   const [outputText, setOutputText] = useState<string>('');
@@ -115,6 +121,8 @@ const App: React.FC = () => {
   const [theme, setTheme] = useState<ThemeMode>('light');
   const [isEditingCanvas, setIsEditingCanvas] = useState<boolean>(false);
   const [shouldRenderCanvas, setShouldRenderCanvas] = useState<boolean>(false);
+  const [answerKey, setAnswerKey] = useState<Answer[]>([]);
+  const [canvasView, setCanvasView] = useState<'preview' | 'answers'>('preview');
 
   const isCanvasVisible = Boolean(outputText) && isArtifactOpen;
 
@@ -185,9 +193,11 @@ const App: React.FC = () => {
       for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
         try {
           const result = await generateTestSamples(inputText, numExercises, difficulty, language, guidancePrompt);
-          setOutputText(result);
-          setEditableLatex(result);
+          setOutputText(result.latex);
+          setEditableLatex(result.latex);
+          setAnswerKey(result.answerKey);
           setIsArtifactOpen(true);
+          setCanvasView(result.answerKey.length > 0 ? 'answers' : 'preview');
           setError(null);
           return;
         } catch (error) {
@@ -228,9 +238,11 @@ const App: React.FC = () => {
         try {
           const result = await generateTestSamples(sourceLatex, numExercises, difficulty, language, guidancePrompt);
           setInputText(sourceLatex);
-          setOutputText(result);
-          setEditableLatex(result);
+          setOutputText(result.latex);
+          setEditableLatex(result.latex);
+          setAnswerKey(result.answerKey);
           setIsArtifactOpen(true);
+          setCanvasView(result.answerKey.length > 0 ? 'answers' : 'preview');
           setGuidancePrompt('');
           setError(null);
           return;
@@ -323,11 +335,13 @@ const App: React.FC = () => {
     setGuidancePrompt('');
     setOutputText('');
     setEditableLatex('');
+    setAnswerKey([]);
     setAttachedFileName(null);
     setIsArtifactOpen(false);
     setArtifactCopied(false);
     setIsEditingCanvas(false);
     setInputMode('prompt');
+    setCanvasView('preview');
     setError(null);
   };
 
@@ -390,9 +404,8 @@ const App: React.FC = () => {
         </header>
 
         <div
-          className={`flex flex-col ${isCanvasVisible ? 'gap-4' : 'gap-6'} lg:flex-row ${
-            isCanvasVisible ? 'lg:gap-2' : 'lg:gap-6'
-          }`}
+          className={`flex flex-col ${isCanvasVisible ? 'gap-4' : 'gap-6'} lg:flex-row ${isCanvasVisible ? 'lg:gap-2' : 'lg:gap-6'
+            }`}
         >
           <main
             className="surface-card rounded-3xl shadow-sm p-6 sm:p-8 transition-all duration-500 ease-out"
@@ -563,47 +576,73 @@ const App: React.FC = () => {
                 <div className="flex items-center justify-between gap-3 flex-wrap">
                   <div>
                     <p className="text-lg font-semibold" style={{ color: 'var(--color-text-primary)' }}>
-                      LaTeX Output
+                      {canvasView === 'preview' ? 'LaTeX Output' : 'Answer Sheet'}
                     </p>
                     <p className="text-xs uppercase tracking-[0.2em]" style={{ color: 'var(--color-secondary)' }}>
-                      {isEditingCanvas ? 'Editing source' : 'Previewing document'}
+                      {canvasView === 'preview'
+                        ? isEditingCanvas
+                          ? 'Editing source'
+                          : 'Previewing document'
+                        : `${answerKey.length} questions`}
                     </p>
                   </div>
                   <div className="flex items-center gap-2 flex-wrap">
-                  <button
-                    type="button"
-                    onClick={handleEditToggle}
-                    className="px-4 py-2 rounded-full text-sm font-semibold border transition"
-                    style={{
-                      borderColor: 'var(--color-accent)',
-                      color: 'var(--color-accent)',
-                      backgroundColor: isEditingCanvas ? 'var(--color-surface-muted)' : 'transparent',
-                    }}
-                  >
-                    {isEditingCanvas ? 'Done' : 'Edit'}
-                  </button>
-                  <Button
-                    variant="secondary"
-                    onClick={handleCopyArtifact}
-                      className="px-4 py-2 text-sm font-semibold rounded-full"
-                    >
-                      {artifactCopied ? 'Copied!' : 'Copy'}
-                    </Button>
-                    <button
-                      type="button"
-                      onClick={handleDownloadArtifact}
-                      className="icon-button"
-                      style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }}
-                      aria-label="Download LaTeX output"
-                      title="Download LaTeX output"
-                    >
-                      <DownloadIcon aria-hidden="true" size={18} />
-                    </button>
+                    {answerKey.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setCanvasView((prev) => (prev === 'preview' ? 'answers' : 'preview'))}
+                        className="px-4 py-2 rounded-full text-sm font-semibold border transition"
+                        style={{
+                          borderColor: 'var(--color-accent)',
+                          color: 'var(--color-accent)',
+                          backgroundColor: 'transparent',
+                        }}
+                      >
+                        {canvasView === 'preview' ? 'Show Answers' : 'Show Preview'}
+                      </button>
+                    )}
+                    {canvasView === 'preview' && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={handleEditToggle}
+                          className="px-4 py-2 rounded-full text-sm font-semibold border transition"
+                          style={{
+                            borderColor: 'var(--color-accent)',
+                            color: 'var(--color-accent)',
+                            backgroundColor: isEditingCanvas ? 'var(--color-surface-muted)' : 'transparent',
+                          }}
+                        >
+                          {isEditingCanvas ? 'Done' : 'Edit'}
+                        </button>
+                        <Button
+                          variant="secondary"
+                          onClick={handleCopyArtifact}
+                          className="px-4 py-2 text-sm font-semibold rounded-full"
+                        >
+                          {artifactCopied ? 'Copied!' : 'Copy'}
+                        </Button>
+                        <button
+                          type="button"
+                          onClick={handleDownloadArtifact}
+                          className="icon-button"
+                          style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }}
+                          aria-label="Download LaTeX output"
+                          title="Download LaTeX output"
+                        >
+                          <DownloadIcon aria-hidden="true" size={18} />
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
 
                 <div className="canvas-surface rounded-2xl flex-1 overflow-hidden min-h-[420px] flex flex-col">
-                  {isEditingCanvas ? (
+                  {canvasView === 'answers' ? (
+                    <div className="flex-1 min-h-0 p-4 overflow-auto">
+                      <AnswerSheet answerKey={answerKey} numQuestions={numExercises} />
+                    </div>
+                  ) : isEditingCanvas ? (
                     <textarea
                       value={editableLatex}
                       onChange={(e) => setEditableLatex(e.target.value)}

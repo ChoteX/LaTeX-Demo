@@ -17,5 +17,12 @@ export default defineConfig(({ mode }) => {
         '@': path.resolve(__dirname, '.'),
       },
     },
+    optimizeDeps: {
+      esbuildOptions: {
+        loader: {
+          '.keep': 'empty',
+        },
+      },
+    },
   };
 });

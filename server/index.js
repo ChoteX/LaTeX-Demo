@@ -3,6 +3,7 @@ import cors from 'cors';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
 import { GoogleGenAI } from '@google/genai';
+import Redis from 'ioredis';
 
 dotenv.config();
 
@@ -100,8 +101,97 @@ const allowedOrigins = (process.env.ALLOWED_ORIGINS || '')
   .filter(Boolean);
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+// Redis setup for shared rate limiting across workers
+let redisClient = null;
+let useRedis = false;
+
+if (process.env.REDIS_URL) {
+  try {
+    redisClient = new Redis(process.env.REDIS_URL, {
+      maxRetriesPerRequest: 3,
+      enableOfflineQueue: false,
+      lazyConnect: true,
+    });
+
+    redisClient.on('error', (err) => {
+      console.warn('Redis connection error:', err.message);
+      useRedis = false;
+    });
+
+    redisClient.on('connect', () => {
+      console.log('Redis connected successfully for shared rate limiting');
+      useRedis = true;
+    });
+
+    // Attempt to connect asynchronously
+    (async () => {
+      try {
+        await redisClient.connect();
+      } catch (err) {
+        console.warn('Failed to connect to Redis, falling back to in-memory rate limiting:', err.message);
+        useRedis = false;
+      }
+    })();
+  } catch (err) {
+    console.warn('Redis initialization failed, using in-memory rate limiting:', err.message);
+    redisClient = null;
+    useRedis = false;
+  }
+} else {
+  console.log('REDIS_URL not configured, using in-memory rate limiting');
+}
+
+// Fallback in-memory rate limiting
 let requestTimestamps = [];
+
 const waitForRateLimitSlot = async () => {
+  if (useRedis && redisClient) {
+    // Redis-based rate limiting (shared across all workers)
+    const RATE_LIMIT_KEY = 'gemini:rate_limit:timestamps';
+
+    while (true) {
+      const now = Date.now();
+      const cutoff = now - REQUEST_INTERVAL_MS;
+
+      try {
+        // Remove old timestamps and get current count atomically
+        const multi = redisClient.multi();
+        multi.zremrangebyscore(RATE_LIMIT_KEY, '-inf', cutoff);
+        multi.zcard(RATE_LIMIT_KEY);
+        multi.expire(RATE_LIMIT_KEY, Math.ceil(REQUEST_INTERVAL_MS / 1000) + 10);
+        const results = await multi.exec();
+
+        const currentCount = results[1][1];
+
+        if (currentCount < MAX_REQUESTS_PER_INTERVAL) {
+          // Add this request timestamp
+          await redisClient.zadd(RATE_LIMIT_KEY, now, `${now}-${Math.random()}`);
+          return;
+        }
+
+        // Need to wait - get oldest timestamp
+        const oldestEntries = await redisClient.zrange(RATE_LIMIT_KEY, 0, 0, 'WITHSCORES');
+        if (oldestEntries.length >= 2) {
+          const oldest = parseInt(oldestEntries[1]);
+          const waitMs = Math.max(REQUEST_INTERVAL_MS - (now - oldest), 50);
+          console.warn(
+            `Gemini rate limit reached (${MAX_REQUESTS_PER_INTERVAL}/${REQUEST_INTERVAL_MS}ms) [shared across workers]. Waiting ${waitMs}ms...`
+          );
+          await sleep(waitMs);
+        } else {
+          await sleep(100);
+        }
+      } catch (err) {
+        console.error('Redis rate limiting error, falling back to in-memory:', err.message);
+        useRedis = false;
+        // Fall through to in-memory implementation below
+        break;
+      }
+    }
+  }
+
+  // In-memory rate limiting (per-worker)
   while (true) {
     const now = Date.now();
     requestTimestamps = requestTimestamps.filter((ts) => now - ts < REQUEST_INTERVAL_MS);
@@ -112,7 +202,7 @@ const waitForRateLimitSlot = async () => {
     const oldest = requestTimestamps[0];
     const waitMs = Math.max(REQUEST_INTERVAL_MS - (now - oldest), 50);
     console.warn(
-      `Gemini rate limit reached (${MAX_REQUESTS_PER_INTERVAL}/${REQUEST_INTERVAL_MS}ms). Waiting ${waitMs}ms before next request...`
+      `Gemini rate limit reached (${MAX_REQUESTS_PER_INTERVAL}/${REQUEST_INTERVAL_MS}ms) [per-worker]. Waiting ${waitMs}ms...`
     );
     await sleep(waitMs);
   }
@@ -252,7 +342,14 @@ ${choiceLabelLine}`;
     ${existingTestLatex}
     ---
 
-    Provide only the complete, new LaTeX script as your output. Do not include any extra explanations, markdown formatting like \`\`\`latex, or introductory text.
+    IMPORTANT: After generating the complete LaTeX document, provide an answer key in JSON format on a separate line.
+    The answer key should be in this exact format:
+    ANSWER_KEY: [{"questionNumber": 1, "correctAnswer": "a"}, {"questionNumber": 2, "correctAnswer": "b"}, ...]
+    
+    For each multiple-choice question in your generated test, include an entry with the question number and the correct answer letter.
+    If a problem is not multiple-choice, you can omit it from the answer key.
+    
+    Provide only the complete, new LaTeX script followed by the answer key line. Do not include any extra explanations, markdown formatting like \`\`\`latex, or introductory text.
   `;
 
   try {
@@ -301,8 +398,22 @@ ${choiceLabelLine}`;
       latexOutput = latexOutput.substring(0, latexOutput.length - 3);
     }
 
+    // Extract answer key if present
+    let answerKey = [];
+    const answerKeyMatch = latexOutput.match(/ANSWER_KEY:\s*(\[.*?\])/s);
+    if (answerKeyMatch) {
+      try {
+        answerKey = JSON.parse(answerKeyMatch[1]);
+        // Remove the answer key line from the LaTeX output
+        latexOutput = latexOutput.replace(/ANSWER_KEY:\s*\[.*?\]/s, '').trim();
+      } catch (parseError) {
+        console.warn('Failed to parse answer key from response:', parseError.message);
+        // Continue without answer key
+      }
+    }
+
     const safeLatex = ensureLatexDocument(latexOutput.trim());
-    res.json({ latex: safeLatex });
+    res.json({ latex: safeLatex, answerKey });
   } catch (error) {
     console.error('Error generating test samples:', error);
     const message = error instanceof Error ? error.message : 'Unexpected error';
