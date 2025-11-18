@@ -19,8 +19,8 @@ interface LatexInputProps {
   showSubmitButton: boolean;
 }
 
-const PROMPT_COLLAPSED_MAX_WIDTH = 880;
-const PROMPT_EXPANDED_MAX_WIDTH = 940;
+const PROMPT_COLLAPSED_MAX_WIDTH = 920;
+const PROMPT_EXPANDED_MAX_WIDTH = 980;
 const PROMPT_BASE_MIN_HEIGHT = 120;
 const PROMPT_EXPANDED_MIN_HEIGHT = 260;
 const PROMPT_GROW_TRIGGER_HEIGHT = 180;
@@ -54,16 +54,20 @@ const LatexInput: React.FC<LatexInputProps> = ({
   const isPromptMode = mode === 'prompt';
 
   useLayoutEffect(() => {
+    const textarea = promptTextareaRef.current;
+    const trimmed = promptValue.trim();
+
+    if (textarea) {
+      textarea.style.height = 'auto';
+      const nextHeight = trimmed.length === 0 ? PROMPT_BASE_MIN_HEIGHT : textarea.scrollHeight;
+      textarea.style.height = `${nextHeight}px`;
+    }
+
     if (!isPromptMode) {
       setIsPromptExpanded(false);
       return;
     }
-    const textarea = promptTextareaRef.current;
-    const trimmed = promptValue.trim();
-    if (textarea) {
-      textarea.style.height = 'auto';
-      textarea.style.height = `${textarea.scrollHeight}px`;
-    }
+
     const hasManualBreak = promptValue.includes('\n');
     const charTrigger = trimmed.length > PROMPT_EXPAND_CHAR_THRESHOLD;
     const heightTrigger = textarea ? textarea.scrollHeight > PROMPT_GROW_TRIGGER_HEIGHT : false;
@@ -170,6 +174,7 @@ const LatexInput: React.FC<LatexInputProps> = ({
     maxHeight: `${PROMPT_EXPANDED_MIN_HEIGHT}px`,
     overflowY: isPromptExpanded ? 'auto' : 'hidden',
     transition: `min-height 360ms ${TRANSITION_TIMING}`,
+    paddingBottom: attachedFileName ? '3.25rem' : undefined,
   };
 
   const renderDropOverlay = () => (
@@ -259,10 +264,7 @@ const LatexInput: React.FC<LatexInputProps> = ({
 
       <div className="relative w-full">
         {isPromptMode ? (
-          <div
-            className="w-full transition-all duration-500 relative"
-            style={promptWrapperStyle}
-          >
+          <div className="w-full transition-all duration-500 relative" style={promptWrapperStyle}>
             <textarea
               id="guidance-prompt"
               ref={promptTextareaRef}
@@ -272,6 +274,14 @@ const LatexInput: React.FC<LatexInputProps> = ({
               className="input-field w-full resize-none rounded-2xl p-4 text-base leading-relaxed focus:ring-2 focus:ring-[#c15f3c] focus:border-[#c15f3c] outline-none transition-colors prompt-textarea"
               style={promptTextareaStyle}
             />
+            {attachedFileName && (
+              <div className="attachment-pill attachment-pill--inline">
+                <span className="attachment-pill__text">{attachedFileName}</span>
+                <button type="button" onClick={handleAttachmentClear} aria-label="Remove attached file">
+                  &times;
+                </button>
+              </div>
+            )}
             {renderDropOverlay()}
           </div>
         ) : (

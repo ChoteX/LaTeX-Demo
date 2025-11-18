@@ -220,11 +220,7 @@ const App: React.FC = () => {
 
     setError(null);
     setIsLoading(true);
-    setOutputText('');
-    setEditableLatex('');
-    setIsArtifactOpen(false);
     setArtifactCopied(false);
-    setIsEditingCanvas(false);
 
     try {
       const maxAttempts = 2;
@@ -235,6 +231,7 @@ const App: React.FC = () => {
           setOutputText(result);
           setEditableLatex(result);
           setIsArtifactOpen(true);
+          setGuidancePrompt('');
           setError(null);
           return;
         } catch (error) {
@@ -355,8 +352,12 @@ const App: React.FC = () => {
           <button
             type="button"
             onClick={handleNewChat}
-            className="text-sm font-semibold"
-            style={{ color: 'var(--color-text-primary)' }}
+            className="px-4 py-2 rounded-full text-sm font-semibold border transition"
+            style={{
+              borderColor: 'var(--color-border)',
+              color: 'var(--color-text-primary)',
+              backgroundColor: 'var(--color-surface)',
+            }}
           >
             New Chat
           </button>
