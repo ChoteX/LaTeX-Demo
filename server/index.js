@@ -38,6 +38,40 @@ const BASE_RETRY_DELAY_MS = Math.max(250, Number(process.env.GEMINI_RETRY_BASE_D
 const MAX_REQUESTS_PER_INTERVAL = Math.max(1, Number(process.env.GEMINI_MAX_REQUESTS_PER_MINUTE || 2));
 const REQUEST_INTERVAL_MS = Math.max(1000, Number(process.env.GEMINI_REQUEST_INTERVAL_MS || 60000));
 
+const collectApiKeys = () => {
+  const values = new Set();
+  const pushKey = (value) => {
+    const trimmed = typeof value === 'string' ? value.trim() : '';
+    if (trimmed) {
+      values.add(trimmed);
+    }
+  };
+  pushKey(process.env.API_KEY);
+  const csvKeys = process.env.API_KEYS;
+  if (csvKeys) {
+    csvKeys
+      .split(',')
+      .map((part) => part.trim())
+      .filter(Boolean)
+      .forEach(pushKey);
+  }
+  Object.keys(process.env)
+    .filter((name) => /^API_KEY_\d+$/i.test(name))
+    .forEach((name) => pushKey(process.env[name]));
+  return Array.from(values);
+};
+
+const API_KEYS = collectApiKeys();
+let apiKeyCursor = 0;
+const nextApiKeySequence = () => {
+  if (!API_KEYS.length) {
+    return [];
+  }
+  const sequence = API_KEYS.map((_, idx) => API_KEYS[(apiKeyCursor + idx) % API_KEYS.length]);
+  apiKeyCursor = (apiKeyCursor + 1) % API_KEYS.length;
+  return sequence;
+};
+
 const resolveChoiceLabelConfig = (language) => {
   if (!language || typeof language !== 'string') {
     return DEFAULT_CHOICE_LABEL_CONFIG;
@@ -100,8 +134,8 @@ const isRetriableModelError = (error) => {
   return false;
 };
 
-if (!process.env.API_KEY) {
-  console.warn('Warning: API_KEY is not set. Gemini requests will fail until you add it.');
+if (!API_KEYS.length) {
+  console.warn('Warning: No Gemini API keys configured. Set API_KEY or API_KEYS to enable generation.');
 }
 
 function ensureLatexDocument(input) {
@@ -152,7 +186,8 @@ app.get('/health', (_req, res) => {
 app.post('/api/generate', async (req, res) => {
   const { existingTestLatex, numExercises, difficulty, language, guidancePrompt } = req.body || {};
 
-  if (!process.env.API_KEY) {
+  const apiKeySequence = nextApiKeySequence();
+  if (!apiKeySequence.length) {
     return res.status(500).json({ error: 'Server is missing the Gemini API key.' });
   }
 
@@ -221,27 +256,33 @@ ${choiceLabelLine}`;
   `;
 
   try {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-    await waitForRateLimitSlot();
     const sendRequestWithRetry = async () => {
       let lastError;
-      for (let attempt = 1; attempt <= MAX_MODEL_RETRIES; attempt += 1) {
-        try {
-          return await ai.models.generateContent({
-            model: modelName,
-            contents: prompt,
-          });
-        } catch (error) {
-          lastError = error;
-          if (attempt === MAX_MODEL_RETRIES || !isRetriableModelError(error)) {
-            throw error;
+      for (let keyIndex = 0; keyIndex < apiKeySequence.length; keyIndex += 1) {
+        const apiKey = apiKeySequence[keyIndex];
+        const ai = new GoogleGenAI({ apiKey });
+        for (let attempt = 1; attempt <= MAX_MODEL_RETRIES; attempt += 1) {
+          try {
+            await waitForRateLimitSlot();
+            return await ai.models.generateContent({
+              model: modelName,
+              contents: prompt,
+            });
+          } catch (error) {
+            lastError = error;
+            if (!isRetriableModelError(error)) {
+              throw error;
+            }
+            if (attempt === MAX_MODEL_RETRIES) {
+              break;
+            }
+            const delayMs = BASE_RETRY_DELAY_MS * 2 ** (attempt - 1);
+            const reason = error?.status || error?.code || error?.message || 'unknown error';
+            console.warn(
+              `Gemini request failed on attempt ${attempt}/${MAX_MODEL_RETRIES} with key #${keyIndex + 1} (${reason}). Retrying in ${delayMs}ms...`
+            );
+            await sleep(delayMs);
           }
-          const delayMs = BASE_RETRY_DELAY_MS * 2 ** (attempt - 1);
-          const reason = error?.status || error?.code || error?.message || 'unknown error';
-          console.warn(
-            `Gemini request failed on attempt ${attempt}/${MAX_MODEL_RETRIES} (${reason}). Retrying in ${delayMs}ms...`
-          );
-          await sleep(delayMs);
         }
       }
       throw lastError;

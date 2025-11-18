@@ -299,29 +299,17 @@ const LatexInput: React.FC<LatexInputProps> = ({
           </div>
         )}
       </div>
-      {(attachedFileName || showSubmitButton) && (
-        <div className="mt-4 flex flex-wrap items-center gap-3 w-full">
-          {attachedFileName && (
-            <div className="attachment-pill" role="status" aria-live="polite">
-              <span className="attachment-pill__text">{attachedFileName}</span>
-              <button type="button" onClick={handleAttachmentClear} aria-label="Remove attached file">
-                &times;
-              </button>
-            </div>
-          )}
-          {showSubmitButton && (
-            <div className="ml-auto">
-              <button
-                type="button"
-                className="chat-send-button"
-                onClick={onSubmit}
-                disabled={disableSubmit || isSubmitting}
-              >
-                {isSubmitting ? 'Sending…' : 'Send'}
-                <PaperAirplaneIcon aria-hidden="true" size={16} />
-              </button>
-            </div>
-          )}
+      {showSubmitButton && (
+        <div className="mt-4 flex w-full justify-end">
+          <button
+            type="button"
+            className="chat-send-button"
+            onClick={onSubmit}
+            disabled={disableSubmit || isSubmitting}
+          >
+            {isSubmitting ? 'Sending…' : 'Send'}
+            <PaperAirplaneIcon aria-hidden="true" size={16} />
+          </button>
         </div>
       )}
     </div>
